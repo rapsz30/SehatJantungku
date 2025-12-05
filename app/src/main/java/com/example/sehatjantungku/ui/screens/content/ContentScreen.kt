@@ -3,6 +3,7 @@ package com.example.sehatjantungku.ui.screens.content
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -25,7 +26,7 @@ fun ContentScreen(
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
-    
+
     Scaffold(
         bottomBar = {
             BottomNavBar(
@@ -57,7 +58,7 @@ fun ContentScreen(
                     color = Color.Gray
                 )
             }
-            
+
             // Search Bar
             OutlinedTextField(
                 value = searchQuery,
@@ -75,9 +76,9 @@ fun ContentScreen(
                     unfocusedBorderColor = Color.LightGray
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Tab Switcher
             TabRow(
                 selectedTabIndex = selectedTab,
@@ -96,7 +97,7 @@ fun ContentScreen(
                     text = { Text("Video") }
                 )
             }
-            
+
             // Content
             LazyColumn(
                 modifier = Modifier

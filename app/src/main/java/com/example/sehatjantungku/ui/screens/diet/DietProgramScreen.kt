@@ -1,6 +1,8 @@
 package com.example.sehatjantungku.ui.screens.diet
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -8,6 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +31,30 @@ fun DietProgramScreen(
 ) {
     val pinkMain = Color(0xFFFF6FB1)
     val state by viewModel.state.collectAsState()
+    var showInfo by remember { mutableStateOf(false) }
+    var useCVDData by remember { mutableStateOf(false) }
+    val cvdDataAvailable = remember { mutableStateOf(false) } // Check from SharedPreferences
+
+    if (showInfo) {
+        AlertDialog(
+            onDismissRequest = { showInfo = false },
+            title = { Text("Panduan Pengisian") },
+            text = {
+                Column {
+                    Text("📋 Pilih jawaban yang paling sesuai dengan kondisi dan preferensi Anda.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("🎯 Jawaban Anda akan membantu kami memberikan rekomendasi diet terbaik.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("💪 Tidak ada jawaban yang salah - semua disesuaikan dengan kebutuhan Anda.")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showInfo = false }) {
+                    Text("OK", color = pinkMain)
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -35,6 +63,11 @@ fun DietProgramScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, "Kembali")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showInfo = true }) {
+                        Icon(Icons.Default.Info, "Info", tint = pinkMain)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -47,13 +80,14 @@ fun DietProgramScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF5F5F5))
+                .background(Color.White)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
             // Question 1
-            QuestionCard(
+            QuestionItem(
+                number = "1️⃣",
                 question = "Apa tujuan Anda saat ini?",
                 options = listOf("Menurunkan berat badan", "Menjaga berat badan", "Menambah berat badan"),
                 selectedOption = state.goal,
@@ -61,7 +95,8 @@ fun DietProgramScreen(
             )
 
             // Question 2
-            QuestionCard(
+            QuestionItem(
+                number = "2️⃣",
                 question = "Seberapa ketat Anda ingin mengurangi garam?",
                 options = listOf("Sangat ketat", "Cukup ketat", "Tidak terlalu ketat"),
                 selectedOption = state.saltReduction,
@@ -69,7 +104,8 @@ fun DietProgramScreen(
             )
 
             // Question 3
-            QuestionCard(
+            QuestionItem(
+                number = "3️⃣",
                 question = "Apakah Anda ingin mengurangi makanan berlemak/berminyak?",
                 options = listOf("Ya, sangat ingin", "Ingin sedikit saja", "Tidak terlalu peduli"),
                 selectedOption = state.fatReduction,
@@ -77,7 +113,8 @@ fun DietProgramScreen(
             )
 
             // Question 4
-            QuestionCard(
+            QuestionItem(
+                number = "4️⃣",
                 question = "Anda lebih suka makanan kaya sayur & buah?",
                 options = listOf("Ya", "Biasa saja", "Tidak terlalu"),
                 selectedOption = state.vegetablePreference,
@@ -85,7 +122,8 @@ fun DietProgramScreen(
             )
 
             // Question 5
-            QuestionCard(
+            QuestionItem(
+                number = "5️⃣",
                 question = "Apakah Anda ingin membatasi konsumsi telur, daging merah, dan santan?",
                 options = listOf("Ya, batasi banyak", "Batasi sedikit", "Tidak masalah"),
                 selectedOption = state.meatRestriction,
@@ -93,12 +131,84 @@ fun DietProgramScreen(
             )
 
             // Question 6
-            QuestionCard(
+            QuestionItem(
+                number = "6️⃣",
                 question = "Apakah Anda nyaman makan buah & sayur setiap hari?",
                 options = listOf("Sangat nyaman", "Kadang-kadang", "Tidak terlalu suka"),
                 selectedOption = state.dailyVegetable,
                 onOptionSelected = { viewModel.updateDailyVegetable(it) }
             )
+
+            // CVD Data Checkbox (if available)
+            if (cvdDataAvailable.value) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = Color(0xFF3B82F6),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Data CVD Risk Tersedia",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1E40AF)
+                                )
+                                Text(
+                                    "Gunakan hasil prediksi CVD Anda untuk rekomendasi diet yang lebih tepat sasaran",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF1E40AF),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(2.dp, Color(0xFF3B82F6), RoundedCornerShape(12.dp))
+                                .clickable { useCVDData = !useCVDData }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = useCVDData,
+                                onCheckedChange = { useCVDData = it },
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3B82F6))
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Pertimbangkan hasil CVD Risk saya",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF1E40AF),
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (useCVDData) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color(0xFF3B82F6),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
 
             // Submit Button
             Button(
@@ -111,58 +221,74 @@ fun DietProgramScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = pinkMain),
-                enabled = state.goal.isNotEmpty() && state.saltReduction.isNotEmpty()
+                enabled = state.goal.isNotEmpty() && state.saltReduction.isNotEmpty() &&
+                        state.fatReduction.isNotEmpty() && state.vegetablePreference.isNotEmpty() &&
+                        state.meatRestriction.isNotEmpty() && state.dailyVegetable.isNotEmpty()
             ) {
-                Text("Submit", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Dapatkan Rekomendasi Diet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
 }
 
 @Composable
-fun QuestionCard(
+fun QuestionItem(
+    number: String,
     question: String,
     options: List<String>,
     selectedOption: String,
     onOptionSelected: (String) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                question,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF333333)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+    val pinkMain = Color(0xFFFF6FB1)
 
+    Column {
+        Text(
+            "$number $question",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1F2937),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             options.forEach { option ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .selectable(
-                            selected = selectedOption == option,
-                            onClick = { onOptionSelected(option) }
+                        .border(
+                            width = 2.dp,
+                            color = if (selectedOption == option) pinkMain else Color(0xFFE5E7EB),
+                            shape = RoundedCornerShape(12.dp)
                         )
-                        .padding(vertical = 8.dp),
+                        .background(
+                            color = if (selectedOption == option) Color(0xFFFCE7F3) else Color.White,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .clickable { onOptionSelected(option) }
+                        .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
                         selected = selectedOption == option,
                         onClick = { onOptionSelected(option) },
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = Color(0xFFFF6FB1)
-                        )
+                        colors = RadioButtonDefaults.colors(selectedColor = pinkMain)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(option, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        option,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF1F2937),
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (selectedOption == option) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = pinkMain,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }

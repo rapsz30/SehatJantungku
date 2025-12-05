@@ -77,7 +77,7 @@ fun SettingsScreen(navController: NavController) {
                     )
                 }
             }
-            
+
             // Settings Menu
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -103,7 +103,7 @@ fun SettingsScreen(navController: NavController) {
                     onClick = { }
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 // Logout Button
                 Button(
                     onClick = { },

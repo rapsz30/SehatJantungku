@@ -47,7 +47,7 @@ fun ProfileScreen(navController: NavController) {
                             )
                         )
                 )
-                
+
                 // Back Button
                 IconButton(
                     onClick = { navController.popBackStack() },
@@ -61,7 +61,7 @@ fun ProfileScreen(navController: NavController) {
                         tint = Color.White
                     )
                 }
-                
+
                 // Title
                 Text(
                     text = "Profile",
@@ -72,7 +72,7 @@ fun ProfileScreen(navController: NavController) {
                         .align(Alignment.TopCenter)
                         .padding(top = 20.dp)
                 )
-                
+
                 // Profile Picture
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -121,7 +121,7 @@ fun ProfileScreen(navController: NavController) {
                 }
             }
         }
-        
+
         // Personal Information Card
         item {
             Card(
@@ -141,35 +141,35 @@ fun ProfileScreen(navController: NavController) {
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
-                    
+
                     ProfileInfoItem(
                         icon = Icons.Default.Phone,
                         label = "Nomor Telepon",
                         value = "+62 812-3456-7890"
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     ProfileInfoItem(
                         icon = Icons.Default.Email,
                         label = "Email",
                         value = "user@example.com"
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     ProfileInfoItem(
                         icon = Icons.Default.Cake,
                         label = "Tanggal Lahir",
                         value = "15 Januari 1996"
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     ProfileInfoItem(
                         icon = Icons.Default.Person,
                         label = "Usia",
                         value = "28 tahun"
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     ProfileInfoItem(
                         icon = Icons.Default.LocationOn,
                         label = "Alamat",
@@ -178,7 +178,7 @@ fun ProfileScreen(navController: NavController) {
                 }
             }
         }
-        
+
         // Edit Profile Button
         item {
             Button(

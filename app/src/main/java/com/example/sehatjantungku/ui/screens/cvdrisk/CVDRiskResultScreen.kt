@@ -29,7 +29,7 @@ fun CVDRiskResultScreen(
         riskScore < 70 -> "Sedang"
         else -> "Tinggi"
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,9 +73,9 @@ fun CVDRiskResultScreen(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -86,18 +86,18 @@ fun CVDRiskResultScreen(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         // Risk bars
                         RiskBar("Risiko Anda", riskScore, PinkMain)
                         Spacer(modifier = Modifier.height(8.dp))
                         RiskBar("Normal", 50, Color(0xFF4CAF50))
                         Spacer(modifier = Modifier.height(8.dp))
                         RiskBar("Optimal", 30, Color(0xFF2196F3))
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         Text(
                             text = "Kategori: $riskCategory",
                             fontSize = 16.sp,
@@ -105,9 +105,9 @@ fun CVDRiskResultScreen(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -129,9 +129,9 @@ fun CVDRiskResultScreen(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 Button(
                     onClick = { navController.popBackStack() },
                     modifier = Modifier

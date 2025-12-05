@@ -27,6 +27,7 @@ data class Notification(
     val time: String,
     val isRead: Boolean
 )
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(navController: NavController) {
@@ -36,7 +37,7 @@ fun NotificationsScreen(navController: NavController) {
         Notification(3, "Check-up Reminder", "Jangan lupa check-up bulanan Anda", "2 jam lalu", true),
         Notification(4, "Pencapaian", "Selamat! Anda sudah menyelesaikan 7 hari diet", "1 hari lalu", true)
     )
-    
+
     Scaffold(
         topBar = {
             TopAppBar(

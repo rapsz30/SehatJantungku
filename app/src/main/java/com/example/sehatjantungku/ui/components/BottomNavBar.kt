@@ -7,12 +7,11 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Settings
-import com.example.sehatjantungku.ui.theme.PinkMain
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
-
+import com.example.sehatjantungku.ui.theme.PinkMain
 
 @Composable
 fun BottomNavBar(

@@ -1,4 +1,4 @@
-package com.sehatjantungku.navigation
+package com.example.sehatjantungku.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
@@ -6,29 +6,28 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.sehatjantungku.ui.screens.auth.LoginScreen
+import com.example.sehatjantungku.ui.screens.auth.RegisterScreen
+import com.example.sehatjantungku.ui.screens.auth.ForgotPasswordScreen
+import com.example.sehatjantungku.ui.screens.home.HomeScreen
 import com.example.sehatjantungku.ui.screens.content.ContentScreen
+import com.example.sehatjantungku.ui.screens.settings.SettingsScreen
+import com.example.sehatjantungku.ui.screens.profile.ProfileScreen
+import com.example.sehatjantungku.ui.screens.notifications.NotificationsScreen
 import com.example.sehatjantungku.ui.screens.cvdrisk.CVDRiskScreen
-import com.example.sehatjantungku.ui.screens.cvdrisk.CVDResultScreen
+import com.example.sehatjantungku.ui.screens.cvdrisk.CVDRiskResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietProgramScreen
 import com.example.sehatjantungku.ui.screens.diet.DietResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietStartScreen
-import com.example.sehatjantungku.ui.screens.home.HomeScreen
-import com.example.sehatjantungku.ui.screens.notifications.NotificationsScreen
-import com.example.sehatjantungku.ui.screens.profile.ProfileScreen
-import com.example.sehatjantungku.ui.screens.settings.SettingsScreen
-
-sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object Content : Screen("content")
-    object Settings : Screen("settings")
-    object Profile : Screen("profile")
-    object Notifications : Screen("notifications")
-    object CVDRisk : Screen("cvd_risk")
-    object CVDResult : Screen("cvd_result/{heartAge}/{riskScore}")
-    object DietProgram : Screen("diet_program")
-    object DietResult : Screen("diet_result/{dietType}")
-    object DietStart : Screen("diet_start/{dietType}")
-}
+import com.example.sehatjantungku.ui.screens.diet.DietCompletionScreen
+import com.example.sehatjantungku.ui.screens.content.ArticleDetailScreen
+import com.example.sehatjantungku.ui.screens.content.VideoDetailScreen
+import com.example.sehatjantungku.ui.screens.settings.AccountSettingsScreen
+import com.example.sehatjantungku.ui.screens.settings.EmailChangeScreen
+import com.example.sehatjantungku.ui.screens.settings.PasswordChangeScreen
+import com.example.sehatjantungku.ui.screens.settings.LanguageScreen
+import com.example.sehatjantungku.ui.screens.settings.HelpCenterScreen
+import com.example.sehatjantungku.ui.screens.chatbot.ChatbotScreen
 
 @Composable
 fun SehatJantungkuNavigation() {
@@ -36,34 +35,43 @@ fun SehatJantungkuNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = "login" // Changed start destination to login
     ) {
-        composable(Screen.Home.route) {
-            HomeScreen(navController = navController)
+        composable("login") {
+            LoginScreen(navController)
+        }
+        composable("register") {
+            RegisterScreen(navController)
+        }
+        composable("forgot_password") {
+            ForgotPasswordScreen(navController)
         }
 
-        composable(Screen.Content.route) {
-            ContentScreen(navController = navController)
+        composable("home") {
+            HomeScreen(navController)
+        }
+        composable("content") {
+            ContentScreen(navController)
+        }
+        composable("settings") {
+            SettingsScreen(navController)
+        }
+        composable("profile") {
+            ProfileScreen(navController)
+        }
+        composable("notifications") {
+            NotificationsScreen(navController)
         }
 
-        composable(Screen.Settings.route) {
-            SettingsScreen(navController = navController)
+        composable("chatbot") {
+            ChatbotScreen(navController)
         }
 
-        composable(Screen.Profile.route) {
-            ProfileScreen(navController = navController)
+        composable("cvd_risk") {
+            CVDRiskScreen(navController)
         }
-
-        composable(Screen.Notifications.route) {
-            NotificationsScreen(navController = navController)
-        }
-
-        composable(Screen.CVDRisk.route) {
-            CVDRiskScreen(navController = navController)
-        }
-
         composable(
-            route = Screen.CVDResult.route,
+            route = "cvd_risk_result/{heartAge}/{riskScore}", // Fixed parameter order to match function signature
             arguments = listOf(
                 navArgument("heartAge") { type = NavType.IntType },
                 navArgument("riskScore") { type = NavType.IntType }
@@ -71,37 +79,64 @@ fun SehatJantungkuNavigation() {
         ) { backStackEntry ->
             val heartAge = backStackEntry.arguments?.getInt("heartAge") ?: 0
             val riskScore = backStackEntry.arguments?.getInt("riskScore") ?: 0
-            CVDResultScreen(
-                navController = navController,
-                heartAge = heartAge,
-                riskScore = riskScore
-            )
+            CVDRiskResultScreen(navController, heartAge, riskScore)
         }
 
-        composable(Screen.DietProgram.route) {
-            DietProgramScreen(navController = navController)
+        composable("diet_program") {
+            DietProgramScreen(navController)
         }
-
         composable(
-            route = Screen.DietResult.route,
+            route = "diet_result/{bestDiet}/{scores}", // Added missing parameters bestDiet and scores
+            arguments = listOf(
+                navArgument("bestDiet") { type = NavType.StringType },
+                navArgument("scores") { type = NavType.StringType } // Pass as comma-separated string
+            )
+        ) { backStackEntry ->
+            val bestDiet = backStackEntry.arguments?.getString("bestDiet") ?: ""
+            val scoresString = backStackEntry.arguments?.getString("scores") ?: "0,0,0,0,0"
+            val scores = scoresString.split(",").map { it.toIntOrNull() ?: 0 }
+            DietResultScreen(navController, bestDiet, scores)
+        }
+        composable(
+            route = "diet_start/{dietType}",
             arguments = listOf(navArgument("dietType") { type = NavType.StringType })
         ) { backStackEntry ->
             val dietType = backStackEntry.arguments?.getString("dietType") ?: "Plant-Based"
-            DietResultScreen(
-                navController = navController,
-                dietType = dietType
-            )
+            DietStartScreen(navController, dietType)
+        }
+        composable("diet_completion") {
+            DietCompletionScreen(navController)
         }
 
         composable(
-            route = Screen.DietStart.route,
-            arguments = listOf(navArgument("dietType") { type = NavType.StringType })
+            route = "article/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
         ) { backStackEntry ->
-            val dietType = backStackEntry.arguments?.getString("dietType") ?: "Plant-Based"
-            DietStartScreen(
-                navController = navController,
-                dietType = dietType
-            )
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            ArticleDetailScreen(navController, id)
+        }
+        composable(
+            route = "video/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            VideoDetailScreen(navController, id)
+        }
+
+        composable("settings/account") {
+            AccountSettingsScreen(navController)
+        }
+        composable("settings/email") {
+            EmailChangeScreen(navController)
+        }
+        composable("settings/password") {
+            PasswordChangeScreen(navController)
+        }
+        composable("settings/language") {
+            LanguageScreen(navController)
+        }
+        composable("settings/help") {
+            HelpCenterScreen(navController)
         }
     }
 }

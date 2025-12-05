@@ -1,7 +1,7 @@
 package com.example.sehatjantungku.ui.screens.diet
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,18 +20,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 
 data class DailyTask(
     val id: Int,
+    val emoji: String,
     val title: String,
+    val description: String,
     val time: String,
     val points: Int,
-    val detail: String,
+    val shortTip: String,
     val examples: List<String>,
-    val tips: List<String>,
-    var isCompleted: Boolean = false,
-    var isExpanded: Boolean = false
+    var isCompleted: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,49 +45,166 @@ fun DietStartScreen(
     val pinkLight = Color(0xFFFF8CCF)
     val purpleLight = Color(0xFFCC7CF0)
 
-    var streak by remember { mutableStateOf(7) }
-    var totalPoints by remember { mutableStateOf(450) }
-    var dailyProgress by remember { mutableStateOf(65) }
+    var currentDay by remember { mutableStateOf(20) } // Set to day 20 for testing
+    val totalDays = 21
+    var currentStreak by remember { mutableStateOf(19) }
+    var totalPoints by remember { mutableStateOf(950) }
+
+    var isRulesOpen by remember { mutableStateOf(false) }
+    var showAchievementsModal by remember { mutableStateOf(false) }
 
     val tasks = remember {
         mutableStateListOf(
             DailyTask(
-                1, "Sarapan Sehat", "07:00 - 09:00", 50,
-                "Konsumsi sarapan bergizi dengan karbohidrat kompleks, protein, dan serat untuk energi optimal di pagi hari.",
-                listOf("Oatmeal dengan buah segar dan kacang", "Roti gandum dengan telur rebus dan alpukat", "Smoothie bowl dengan chia seeds"),
-                listOf("Hindari gula tambahan", "Minum air putih setelah bangun", "Sarapan maksimal 2 jam setelah bangun")
+                0, "☕", "Sarapan Sehat Pagi",
+                "Mulai hari dengan nutrisi lengkap",
+                "06:00 - 09:00",
+                20,
+                "Sertakan protein, sayur, dan buah",
+                listOf("Oatmeal + pisang + telur", "Roti gandum + alpukat + tomat", "Smoothie buah + yogurt")
             ),
             DailyTask(
-                2, "Makan Siang Seimbang", "12:00 - 13:30", 50,
-                "Makan siang dengan porsi seimbang: 50% sayur, 25% protein tanpa lemak, 25% karbohidrat kompleks.",
-                listOf("Nasi merah + ikan kukus + tumis sayur", "Salad quinoa dengan grilled chicken", "Sup sayur dengan tahu/tempe"),
-                listOf("Kunyah makanan perlahan", "Hindari gorengan", "Gunakan piring kecil untuk kontrol porsi")
+                1, "🍽️", "Makan Siang Bergizi",
+                "Porsi seimbang dengan sayuran",
+                "12:00 - 14:00",
+                25,
+                "50% sayur, 25% protein, 25% karbo",
+                listOf("Nasi merah + ikan + sayur bening", "Salad ayam dengan quinoa", "Sup sayuran + tempe")
             ),
             DailyTask(
-                3, "Makan Malam Ringan", "18:00 - 19:30", 40,
-                "Makan malam lebih ringan dan hindari makanan berat minimal 3 jam sebelum tidur.",
-                listOf("Sup sayuran dengan protein nabati", "Salad dengan dressing ringan", "Pepes ikan dengan lalapan"),
-                listOf("Hindari karbohidrat berlebih", "Jangan makan sambil menonton TV", "Makan 3 jam sebelum tidur")
+                2, "💧", "Minum 8 Gelas Air",
+                "Jaga hidrasi sepanjang hari",
+                "Sepanjang hari",
+                15,
+                "2L air = 8 gelas @ 250ml",
+                listOf("Pagi: 2 gelas", "Siang: 3 gelas", "Sore: 2 gelas", "Malam: 1 gelas")
             ),
             DailyTask(
-                4, "Minum Air 2L", "Sepanjang Hari", 30,
-                "Konsumsi minimal 8 gelas air putih (2 liter) untuk hidrasi optimal dan metabolisme yang baik.",
-                listOf("2 gelas saat bangun", "1 gelas sebelum setiap makan", "1 gelas setelah olahraga", "Air infus lemon untuk variasi"),
-                listOf("Bawa botol minum kemana-mana", "Set reminder di HP", "Hindari minuman manis")
+                3, "🍎", "Camilan Sehat",
+                "Buah atau kacang-kacangan",
+                "10:00 atau 16:00",
+                15,
+                "Max 150 kalori per snack",
+                listOf("Segenggam kacang almond", "1 apel atau pir", "Yogurt plain + madu")
+            ),
+            DailyTask(
+                4, "🌙", "Makan Malam Ringan",
+                "Porsi kecil, banyak sayur",
+                "18:00 - 20:00",
+                25,
+                "Makan 3 jam sebelum tidur",
+                listOf("Pepes ikan + tumis sayur", "Sup ayam + sayuran", "Tempe kukus + capcay")
             )
         )
     }
 
-    val completedTasks = tasks.count { it.isCompleted }
-    val totalTasks = tasks.size
+    val completedCount = tasks.count { it.isCompleted }
+    val progress = (completedCount.toFloat() / tasks.size * 100).toInt()
+
+    val achievements = listOf(
+        Achievement("Minggu Pertama", "⭐", true, Color(0xFFFFC107)),
+        Achievement("Minggu Kedua", "💎", true, Color(0xFF00BCD4)),
+        Achievement("Minggu Ketiga", "🏆", false, Color(0xFF9C27B0)),
+        Achievement("Program Selesai", "👑", false, Color(0xFFFF6FB1))
+    )
+
+    if (showAchievementsModal) {
+        Dialog(onDismissRequest = { showAchievementsModal = false }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 500.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    listOf(pinkLight, purpleLight)
+                                )
+                            )
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                                Text(
+                                    "Pencapaian Anda",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                            IconButton(onClick = { showAchievementsModal = false }) {
+                                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        achievements.forEach { achievement ->
+                            AchievementCard(achievement)
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Program Diet $dietType", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                title = {
+                    Column {
+                        Text(
+                            "Program Diet $dietType",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            "Hari $currentDay dari $totalDays",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, "Kembali")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { showAchievementsModal = true },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFFF3E0))
+                    ) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = "Achievements",
+                            tint = Color(0xFFFF9800)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -104,180 +222,385 @@ fun DietStartScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Stats Card
-            Card(
+            // Stats Cards
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                listOf(pinkLight, purpleLight)
-                            )
-                        )
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🔥", fontSize = 32.sp)
-                            Text("$streak Hari", color = Color.White, fontWeight = FontWeight.Bold)
-                            Text("Streak", color = Color.White.copy(0.9f), fontSize = 12.sp)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("⭐", fontSize = 32.sp)
-                            Text("$totalPoints Poin", color = Color.White, fontWeight = FontWeight.Bold)
-                            Text("Total", color = Color.White.copy(0.9f), fontSize = 12.sp)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("✅", fontSize = 32.sp)
-                            Text("$completedTasks/$totalTasks", color = Color.White, fontWeight = FontWeight.Bold)
-                            Text("Hari Ini", color = Color.White.copy(0.9f), fontSize = 12.sp)
-                        }
-                    }
-                }
+                StatCard("🔥", currentStreak.toString(), "Hari Streak", Modifier.weight(1f))
+                StatCard("🏆", totalPoints.toString(), "Total Poin", Modifier.weight(1f))
+                StatCard("🎯", "$completedCount/${tasks.size}", "Tugas Selesai", Modifier.weight(1f))
             }
 
-            // Daily Progress
+            // Daily Progress Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(4.dp)
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Progress Harian", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("$dailyProgress%", color = pinkMain, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.DateRange,
+                                contentDescription = null,
+                                tint = pinkMain,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Progress Hari $currentDay",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            "$progress%",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = pinkMain
+                        )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     LinearProgressIndicator(
-                        progress = dailyProgress / 100f,
+                        progress = progress / 100f,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(12.dp)
-                            .clip(RoundedCornerShape(6.dp)),
+                            .height(16.dp)
+                            .clip(RoundedCornerShape(8.dp)),
                         color = pinkMain,
                         trackColor = Color(0xFFEEEEEE)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        if (completedCount == tasks.size)
+                            "🎉 Sempurna! Semua tugas hari ini selesai!"
+                        else
+                            "Masih ${tasks.size - completedCount} tugas lagi untuk hari ini",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
             }
 
-            // Daily Tasks
-            Text(
-                "Tugas Harian",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isRulesOpen = !isRulesOpen }
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF10B981)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("📋", fontSize = 16.sp)
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "Aturan Dasar Diet $dietType",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF065F46)
+                            )
+                        }
+                        Icon(
+                            if (isRulesOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981)
+                        )
+                    }
+
+                    AnimatedVisibility(visible = isRulesOpen) {
+                        Column(
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            RuleItem("1", "Konsistensi: Jalankan program minimal 21 hari untuk hasil optimal")
+                            RuleItem("2", "Porsi: Makan 3x sehari dengan porsi sedang, hindari berlebihan")
+                            RuleItem("3", "Hidrasi: Minum air putih 8 gelas (2L) setiap hari")
+                            RuleItem("4", "Olahraga: Kombinasikan dengan aktivitas fisik minimal 30 menit/hari")
+                            RuleItem("5", "Tidur: Istirahat cukup 7-8 jam setiap malam")
+                        }
+                    }
+                }
+            }
+
+            // Daily Tasks Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = pinkMain,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    "Tugas Harian Anda",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             tasks.forEach { task ->
-                TaskCard(
+                ImprovedTaskCard(
                     task = task,
-                    onCheckChanged = { isChecked ->
-                        task.isCompleted = isChecked
-                        if (isChecked) {
+                    onToggle = {
+                        task.isCompleted = !task.isCompleted
+                        if (task.isCompleted) {
                             totalPoints += task.points
-                            dailyProgress = ((completedTasks + 1) * 100) / totalTasks
                         } else {
                             totalPoints -= task.points
-                            dailyProgress = ((completedTasks - 1) * 100) / totalTasks
                         }
-                    },
-                    onExpandToggle = {
-                        task.isExpanded = !task.isExpanded
                     }
                 )
             }
 
-            // Achievements
-            Text(
-                "Pencapaian",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Button(
+                onClick = {
+                    if (completedCount == tasks.size) {
+                        if (currentDay == totalDays) {
+                            // Navigate to completion page
+                            navController.navigate("diet_completion")
+                        } else {
+                            // Move to next day
+                            currentDay += 1
+                            currentStreak += 1
+                            tasks.forEach { it.isCompleted = false }
+                        }
+                    } else {
+                        // Show alert
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = pinkMain)
             ) {
-                AchievementBadge("🥇", "7 Hari", true)
-                AchievementBadge("🏆", "30 Hari", false)
-                AchievementBadge("💎", "100 Hari", false)
-                AchievementBadge("👑", "365 Hari", false)
+                Text(
+                    "Selesaikan Tugas Hari Ini",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
 }
 
 @Composable
-fun TaskCard(
-    task: DailyTask,
-    onCheckChanged: (Boolean) -> Unit,
-    onExpandToggle: () -> Unit
-) {
+fun StatCard(emoji: String, value: String, label: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(emoji, fontSize = 24.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                value,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1F2937)
+            )
+            Text(
+                label,
+                fontSize = 10.sp,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+@Composable
+fun RuleItem(number: String, text: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF10B981)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                number,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+        Text(
+            text,
+            fontSize = 14.sp,
+            color = Color(0xFF065F46),
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun ImprovedTaskCard(task: DailyTask, onToggle: () -> Unit) {
     val pinkMain = Color(0xFFFF6FB1)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = if (task.isCompleted)
+                Color(0xFFFCE7F3)
+            else
+                Color.White
+        ),
+        border = if (task.isCompleted)
+            androidx.compose.foundation.BorderStroke(2.dp, pinkMain)
+        else
+            null
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Checkbox(
-                    checked = task.isCompleted,
-                    onCheckedChange = onCheckChanged,
-                    colors = CheckboxDefaults.colors(checkedColor = pinkMain)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .then(
+                            if (task.isCompleted)
+                                Modifier.background(
+                                    Brush.horizontalGradient(listOf(pinkMain, Color(0xFFCC7CF0)))
+                                )
+                            else
+                                Modifier.background(Color(0xFFF3F4F6))
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(task.emoji, fontSize = 24.sp)
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(task.title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                    Text(task.time, fontSize = 12.sp, color = Color.Gray)
-                }
-                Text(
-                    "+${task.points}",
-                    color = pinkMain,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                IconButton(onClick = onExpandToggle) {
-                    Icon(
-                        if (task.isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Expand"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            task.title,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (task.isCompleted) pinkMain else Color(0xFF1F2937)
+                        )
+                        Checkbox(
+                            checked = task.isCompleted,
+                            onCheckedChange = { onToggle() },
+                            colors = CheckboxDefaults.colors(checkedColor = pinkMain)
+                        )
+                    }
+
+                    Text(
+                        task.description,
+                        fontSize = 12.sp,
+                        color = Color.Gray
                     )
-                }
-            }
 
-            if (task.isExpanded) {
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Text(task.detail, fontSize = 14.sp, color = Color(0xFF666666), lineHeight = 20.sp)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "⏰ ${task.time}",
+                            fontSize = 11.sp,
+                            color = Color.Gray,
+                            modifier = Modifier
+                                .background(Color(0xFFF3F4F6), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                        Text(
+                            "⭐ +${task.points} poin",
+                            fontSize = 11.sp,
+                            color = if (task.isCompleted) Color.White else Color.Gray,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier
+                                .background(
+                                    if (task.isCompleted) pinkMain else Color(0xFFF3F4F6),
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("Contoh Menu:", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                task.examples.forEach { example ->
-                    Text("• $example", fontSize = 13.sp, color = Color(0xFF666666), modifier = Modifier.padding(start = 8.dp, top = 4.dp))
-                }
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("Tips:", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                task.tips.forEach { tip ->
-                    Text("✓ $tip", fontSize = 13.sp, color = Color(0xFF666666), modifier = Modifier.padding(start = 8.dp, top = 4.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            "💡 Tips: ${task.shortTip}",
+                            fontSize = 12.sp,
+                            color = Color(0xFF1E40AF)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFF9FAFB), RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                    ) {
+                        Column {
+                            Text(
+                                "Contoh:",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF374151)
+                            )
+                            task.examples.take(2).forEach { example ->
+                                Text(
+                                    "• $example",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF6B7280),
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -285,25 +608,69 @@ fun TaskCard(
 }
 
 @Composable
-fun RowScope.AchievementBadge(emoji: String, label: String, unlocked: Boolean) {
+fun AchievementCard(achievement: Achievement) {
     Card(
-        modifier = Modifier
-            .weight(1f)
-            .aspectRatio(1f),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (unlocked) Color(0xFFFFF3E0) else Color(0xFFEEEEEE)
+            containerColor = if (achievement.isUnlocked)
+                achievement.color.copy(alpha = 0.1f)
+            else
+                Color(0xFFF3F4F6)
         )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(emoji, fontSize = 32.sp, color = if (unlocked) Color.Unspecified else Color.Gray)
-            Text(label, fontSize = 10.sp, color = if (unlocked) Color(0xFF333333) else Color.Gray)
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (achievement.isUnlocked)
+                            Color.White
+                        else
+                            Color(0xFFE5E7EB)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    achievement.emoji,
+                    fontSize = 32.sp,
+                    color = if (achievement.isUnlocked)
+                        Color.Unspecified
+                    else
+                        Color.Gray
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    achievement.title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (achievement.isUnlocked)
+                        Color(0xFF1F2937)
+                    else
+                        Color.Gray
+                )
+                Text(
+                    if (achievement.isUnlocked) "✓ Terbuka" else "🔒 Terkunci",
+                    fontSize = 12.sp,
+                    color = if (achievement.isUnlocked)
+                        Color(0xFF10B981)
+                    else
+                        Color.Gray
+                )
+            }
         }
     }
 }
+
+data class Achievement(
+    val title: String,
+    val emoji: String,
+    val isUnlocked: Boolean,
+    val color: Color
+)

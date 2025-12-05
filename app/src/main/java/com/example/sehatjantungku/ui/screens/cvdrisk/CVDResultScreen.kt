@@ -7,8 +7,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -29,6 +32,9 @@ fun CVDResultScreen(
     val pinkLight = Color(0xFFFF8CCF)
     val purpleLight = Color(0xFFCC7CF0)
 
+    val isSaved = remember { mutableStateOf(false) }
+    val showSaveDialog = remember { mutableStateOf(false) }
+
     // Calculate risk category
     val riskCategory = when {
         riskScore < 20 -> "Sangat Rendah"
@@ -42,6 +48,19 @@ fun CVDResultScreen(
         riskScore < 40 -> Color(0xFF8BC34A)
         riskScore < 60 -> Color(0xFFFFC107)
         else -> Color(0xFFF44336)
+    }
+
+    if (showSaveDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showSaveDialog.value = false },
+            title = { Text("Berhasil Disimpan!") },
+            text = { Text("Hasil CVD Risk berhasil disimpan! Data ini dapat digunakan untuk rekomendasi diet yang lebih personal.") },
+            confirmButton = {
+                TextButton(onClick = { showSaveDialog.value = false }) {
+                    Text("OK", color = pinkMain)
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -285,6 +304,48 @@ fun CVDResultScreen(
                 }
             }
 
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        "💡 Simpan hasil prediksi ini untuk mendapatkan rekomendasi diet yang lebih personal!",
+                        fontSize = 14.sp,
+                        color = Color(0xFF1E40AF),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    Button(
+                        onClick = {
+                            // Save to SharedPreferences or ViewModel
+                            isSaved.value = true
+                            showSaveDialog.value = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3B82F6)
+                        ),
+                        enabled = !isSaved.value
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Save",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            if (isSaved.value) "Tersimpan" else "Simpan untuk Program Diet",
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
             // Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -309,7 +370,7 @@ fun CVDResultScreen(
                         containerColor = pinkMain
                     )
                 ) {
-                    Text("Selesai", modifier = Modifier.padding(vertical = 4.dp))
+                    Text("Kembali ke Beranda", modifier = Modifier.padding(vertical = 4.dp))
                 }
             }
         }

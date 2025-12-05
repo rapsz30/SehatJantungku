@@ -32,13 +32,35 @@ import com.example.sehatjantungku.ui.theme.PinkLight
 import com.example.sehatjantungku.ui.theme.PinkMain
 import com.example.sehatjantungku.ui.theme.PurpleLight
 
+data class Article(
+    val title: String,
+    val description: String
+)
+
 @Composable
 fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel()
 ) {
-    val articles by viewModel.articles.collectAsState()
-    
+    val articles = listOf(
+        Article(
+            "Tips Menjaga Kesehatan Jantung",
+            "Pelajari cara-cara sederhana untuk menjaga kesehatan jantung Anda setiap hari"
+        ),
+        Article(
+            "Makanan Sehat untuk Jantung",
+            "Daftar makanan yang baik untuk kesehatan jantung dan pembuluh darah"
+        ),
+        Article(
+            "Olahraga Ringan untuk Jantung",
+            "Jenis-jenis olahraga yang aman dan bermanfaat untuk kesehatan jantung"
+        ),
+        Article(
+            "Mengenali Gejala Penyakit Jantung",
+            "Waspadai tanda-tanda awal penyakit jantung yang sering diabaikan"
+        )
+    )
+
     Scaffold(
         bottomBar = {
             BottomNavBar(
@@ -93,7 +115,7 @@ fun HomeScreen(
                             )
                         }
                     }
-                    
+
                     IconButton(onClick = { navController.navigate("notifications") }) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
@@ -103,7 +125,7 @@ fun HomeScreen(
                     }
                 }
             }
-            
+
             // Hero Banner
             item {
                 Box(
@@ -143,38 +165,37 @@ fun HomeScreen(
                     }
                 }
             }
-            
+
             // Feature Row
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    FeatureItem(
-                        icon = Icons.Default.Chat,
-                        label = "Consultation",
-                        onClick = { }
-                    )
-                    FeatureItem(
-                        icon = Icons.Default.Favorite,
-                        label = "CVD Risk",
-                        onClick = { navController.navigate("cvd_risk") }
-                    )
-                    FeatureItem(
-                        icon = Icons.Default.Restaurant,
-                        label = "Diet",
-                        onClick = { navController.navigate("diet_program") }
-                    )
-                    FeatureItem(
-                        icon = Icons.Default.LocalHospital,
-                        label = "Emergency",
-                        onClick = { }
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        FeatureItem(
+                            icon = Icons.Default.Favorite,
+                            label = "CVD Risk Predictor",
+                            onClick = { navController.navigate("cvd_risk") }
+                        )
+                        FeatureItem(
+                            icon = Icons.Default.Restaurant,
+                            label = "Personalized Diet Program",
+                            onClick = { navController.navigate("diet_program") }
+                        )
+                        FeatureItem(
+                            icon = Icons.Default.Chat,
+                            label = "Chatbot",
+                            onClick = { navController.navigate("chatbot") }
+                        )
+                    }
                 }
             }
-            
+
             // Top Article Section
             item {
                 Text(
@@ -184,7 +205,7 @@ fun HomeScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
-            
+
             items(articles) { article ->
                 ArticleItem(article = article)
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))

@@ -28,7 +28,7 @@ fun CVDRiskScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var showInfoDialog by remember { mutableStateOf(false) }
-    
+
     if (showInfoDialog) {
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
@@ -50,7 +50,7 @@ fun CVDRiskScreen(
             }
         )
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -89,7 +89,7 @@ fun CVDRiskScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -109,9 +109,9 @@ fun CVDRiskScreen(
                             )
                             Text("Wanita", modifier = Modifier.align(Alignment.CenterVertically))
                         }
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         OutlinedTextField(
                             value = state.age,
                             onValueChange = { viewModel.updateAge(it) },
@@ -120,10 +120,10 @@ fun CVDRiskScreen(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            
+
             // Data Fisik Section
             item {
                 Text(
@@ -132,7 +132,7 @@ fun CVDRiskScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -153,9 +153,9 @@ fun CVDRiskScreen(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(12.dp))
-                        
+
                         Button(
                             onClick = { viewModel.calculateBMI() },
                             modifier = Modifier.fillMaxWidth(),
@@ -163,9 +163,9 @@ fun CVDRiskScreen(
                         ) {
                             Text("Hitung BMI")
                         }
-                        
+
                         Spacer(modifier = Modifier.height(12.dp))
-                        
+
                         OutlinedTextField(
                             value = state.bmi,
                             onValueChange = { },
@@ -178,9 +178,9 @@ fun CVDRiskScreen(
                                 disabledLabelColor = Color.Gray
                             )
                         )
-                        
+
                         Spacer(modifier = Modifier.height(12.dp))
-                        
+
                         OutlinedTextField(
                             value = state.bloodPressure,
                             onValueChange = { viewModel.updateBloodPressure(it) },
@@ -189,10 +189,10 @@ fun CVDRiskScreen(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            
+
             // Data Kesehatan Section
             item {
                 Text(
@@ -201,7 +201,7 @@ fun CVDRiskScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -214,10 +214,10 @@ fun CVDRiskScreen(
                         HealthQuestionItem("Hipertensi", state.hypertension) { viewModel.updateHypertension(it) }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
             }
-            
+
             // Submit Button
             item {
                 Button(
@@ -233,7 +233,7 @@ fun CVDRiskScreen(
                 ) {
                     Text("Hitung Risiko Total", fontSize = 16.sp)
                 }
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
