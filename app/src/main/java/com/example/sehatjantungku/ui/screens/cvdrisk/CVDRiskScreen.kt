@@ -1,9 +1,9 @@
 package com.example.sehatjantungku.ui.screens.cvdrisk
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -29,6 +29,8 @@ fun CVDRiskScreen(
     val state by viewModel.state.collectAsState()
     var showInfoDialog by remember { mutableStateOf(false) }
 
+    val pinkMain = PinkMain
+
     if (showInfoDialog) {
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
@@ -36,16 +38,16 @@ fun CVDRiskScreen(
             text = {
                 Text(
                     """
-                    1. Isi semua data dengan benar
-                    2. Hitung BMI terlebih dahulu sebelum melanjutkan
-                    3. Pastikan semua pertanyaan dijawab
-                    4. Tekan tombol Hitung Risiko Total untuk melihat hasil
+                    1. Isi semua data dengan benar.
+                    2. Hitung BMI terlebih dahulu sebelum melanjutkan.
+                    3. Pastikan semua pertanyaan dijawab.
+                    4. Tekan tombol Hitung Risiko Total untuk melihat hasil.
                     """.trimIndent()
                 )
             },
             confirmButton = {
                 TextButton(onClick = { showInfoDialog = false }) {
-                    Text("Mengerti")
+                    Text("Mengerti", color = pinkMain)
                 }
             }
         )
@@ -66,7 +68,7 @@ fun CVDRiskScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = PinkMain,
+                    containerColor = pinkMain,
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
@@ -79,139 +81,134 @@ fun CVDRiskScreen(
                 .fillMaxSize()
                 .background(Color(0xFFF5F5F5))
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Data Pribadi Section
             item {
-                Text(
-                    text = "Data Pribadi",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                FormSectionTitle("Data Pribadi")
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
+                CustomCard {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Jenis Kelamin", fontWeight = FontWeight.Medium)
-                        Row {
-                            RadioButton(
+                        Text("Jenis Kelamin", fontWeight = FontWeight.Medium, color = Color(0xFF333333))
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // --- TATA LETAK JENIS KELAMIN (Vertikal) ---
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            GenderRadioButton(
+                                label = "Pria",
                                 selected = state.gender == "Pria",
-                                onClick = { viewModel.updateGender("Pria") }
+                                onClick = { viewModel.updateGender("Pria") },
+                                modifier = Modifier.fillMaxWidth()
                             )
-                            Text("Pria", modifier = Modifier.align(Alignment.CenterVertically))
-                            Spacer(modifier = Modifier.width(16.dp))
-                            RadioButton(
+                            GenderRadioButton(
+                                label = "Wanita",
                                 selected = state.gender == "Wanita",
-                                onClick = { viewModel.updateGender("Wanita") }
+                                onClick = { viewModel.updateGender("Wanita") },
+                                modifier = Modifier.fillMaxWidth()
                             )
-                            Text("Wanita", modifier = Modifier.align(Alignment.CenterVertically))
                         }
+                        // --- AKHIR TATA LETAK JENIS KELAMIN ---
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                        OutlinedTextField(
+                        CustomOutlinedTextField(
                             value = state.age,
                             onValueChange = { viewModel.updateAge(it) },
-                            label = { Text("Umur (tahun)") },
-                            modifier = Modifier.fillMaxWidth()
+                            label = "Umur (tahun)",
+                            pinkMain = pinkMain
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
 
             // Data Fisik Section
             item {
-                Text(
-                    text = "Data Fisik",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                FormSectionTitle("Data Fisik")
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
+                CustomCard {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            OutlinedTextField(
+                            CustomOutlinedTextField(
                                 value = state.height,
                                 onValueChange = { viewModel.updateHeight(it) },
-                                label = { Text("Tinggi (m)") },
-                                modifier = Modifier.weight(1f)
+                                label = "Tinggi (m)",
+                                modifier = Modifier.weight(1f),
+                                pinkMain = pinkMain
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            OutlinedTextField(
+                            Spacer(modifier = Modifier.width(12.dp))
+                            CustomOutlinedTextField(
                                 value = state.weight,
                                 onValueChange = { viewModel.updateWeight(it) },
-                                label = { Text("Berat (kg)") },
-                                modifier = Modifier.weight(1f)
+                                label = "Berat (kg)",
+                                modifier = Modifier.weight(1f),
+                                pinkMain = pinkMain
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Button(
                             onClick = { viewModel.calculateBMI() },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = PinkMain)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = pinkMain),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Hitung BMI")
+                            Text("Hitung BMI", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        OutlinedTextField(
+                        CustomOutlinedTextField(
                             value = state.bmi,
                             onValueChange = { },
-                            label = { Text("BMI") },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = "BMI",
                             enabled = false,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledTextColor = Color.Black,
-                                disabledBorderColor = Color.Gray,
-                                disabledLabelColor = Color.Gray
-                            )
+                            pinkMain = pinkMain
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        OutlinedTextField(
+                        CustomOutlinedTextField(
                             value = state.bloodPressure,
                             onValueChange = { viewModel.updateBloodPressure(it) },
-                            label = { Text("Tekanan Darah (mmHg)") },
-                            modifier = Modifier.fillMaxWidth()
+                            label = "Tekanan Darah Sistolik (mmHg)",
+                            pinkMain = pinkMain
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
 
             // Data Kesehatan Section
             item {
-                Text(
-                    text = "Data Kesehatan",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                FormSectionTitle("Riwayat Kesehatan")
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
+                CustomCard {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        HealthQuestionItem("Diabetes", state.diabetes) { viewModel.updateDiabetes(it) }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HealthQuestionItem("Perokok", state.smoker) { viewModel.updateSmoker(it) }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HealthQuestionItem("Hipertensi", state.hypertension) { viewModel.updateHypertension(it) }
+                        // --- TATA LETAK RIWAYAT KESEHATAN (Vertikal) ---
+                        HealthQuestionItem(
+                            question = "Apakah Anda memiliki Riwayat Diabetes?",
+                            selected = state.diabetes,
+                            onSelectionChange = { viewModel.updateDiabetes(it) },
+                            pinkMain = pinkMain
+                        )
+                        Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
+                        HealthQuestionItem(
+                            question = "Apakah Anda seorang Perokok?",
+                            selected = state.smoker,
+                            onSelectionChange = { viewModel.updateSmoker(it) },
+                            pinkMain = pinkMain
+                        )
+                        Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
+                        HealthQuestionItem(
+                            question = "Apakah Anda memiliki Riwayat Hipertensi?",
+                            selected = state.hypertension,
+                            onSelectionChange = { viewModel.updateHypertension(it) },
+                            pinkMain = pinkMain
+                        )
+                        // --- AKHIR TATA LETAK RIWAYAT KESEHATAN ---
                     }
                 }
 
@@ -222,16 +219,17 @@ fun CVDRiskScreen(
             item {
                 Button(
                     onClick = {
-                        val result = viewModel.calculateRisk()
-                        navController.navigate("cvd_risk_result/${result.first}/${result.second}")
+                        val (riskScore, heartAge) = viewModel.calculateRisk()
+                        // Navigasi menggunakan format rute: cvd_risk_result/{heartAge}/{riskScore}
+                        navController.navigate("cvd_risk_result/$heartAge/$riskScore")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PinkMain),
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = pinkMain),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Hitung Risiko Total", fontSize = 16.sp)
+                    Text("Hitung Risiko Total", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -240,26 +238,164 @@ fun CVDRiskScreen(
     }
 }
 
+// --- COMPOSE HELPER FUNCTIONS UNTUK TAMPILAN MODERN ---
+
+@Composable
+fun FormSectionTitle(title: String) {
+    Text(
+        text = title,
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color(0xFF1F2937),
+        modifier = Modifier.padding(vertical = 8.dp)
+    )
+}
+
+@Composable
+fun CustomCard(content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun CustomOutlinedTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    pinkMain: Color,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    enabled: Boolean = true
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = modifier,
+        singleLine = true,
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = pinkMain,
+            unfocusedBorderColor = Color(0xFFE5E7EB),
+            focusedLabelColor = pinkMain,
+            disabledTextColor = Color(0xFF333333),
+            disabledBorderColor = Color(0xFFE5E7EB),
+            disabledLabelColor = Color.Gray,
+            disabledContainerColor = Color(0xFFFAFAFA)
+        )
+    )
+}
+
+@Composable
+fun GenderRadioButton(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val pinkMain = PinkMain
+    Card(
+        modifier = modifier
+            .height(56.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) pinkMain.copy(alpha = 0.1f) else Color.White
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            2.dp,
+            if (selected) pinkMain else Color(0xFFE5E7EB)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            RadioButton(
+                selected = selected,
+                onClick = onClick,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = pinkMain,
+                    unselectedColor = Color.Gray
+                )
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                label,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (selected) pinkMain else Color.Black
+            )
+        }
+    }
+}
+
+
 @Composable
 fun HealthQuestionItem(
     question: String,
     selected: Boolean,
-    onSelectionChange: (Boolean) -> Unit
+    onSelectionChange: (Boolean) -> Unit,
+    pinkMain: Color
 ) {
-    Column {
-        Text(question, fontWeight = FontWeight.Medium)
-        Row {
-            RadioButton(
-                selected = selected,
-                onClick = { onSelectionChange(true) }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(question, fontWeight = FontWeight.Medium, color = Color(0xFF333333))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Menggunakan Column untuk Vertikal
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            HealthOptionCard(
+                label = "Ya",
+                isSelected = selected,
+                onClick = { onSelectionChange(true) },
+                pinkMain = pinkMain,
+                modifier = Modifier.fillMaxWidth() // Mengambil lebar penuh
             )
-            Text("Ya", modifier = Modifier.align(Alignment.CenterVertically))
-            Spacer(modifier = Modifier.width(16.dp))
-            RadioButton(
-                selected = !selected,
-                onClick = { onSelectionChange(false) }
+            HealthOptionCard(
+                label = "Tidak",
+                isSelected = !selected,
+                onClick = { onSelectionChange(false) },
+                pinkMain = pinkMain,
+                modifier = Modifier.fillMaxWidth() // Mengambil lebar penuh
             )
-            Text("Tidak", modifier = Modifier.align(Alignment.CenterVertically))
+        }
+    }
+}
+
+@Composable
+private fun HealthOptionCard(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    pinkMain: Color,
+    modifier: Modifier
+) {
+    Card(
+        modifier = modifier
+            .height(56.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) pinkMain.copy(alpha = 0.1f) else Color.White
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            2.dp,
+            if (isSelected) pinkMain else Color(0xFFE5E7EB)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                label,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (isSelected) pinkMain else Color.Black
+            )
         }
     }
 }

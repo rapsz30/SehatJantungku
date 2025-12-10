@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -166,33 +167,31 @@ fun HomeScreen(
                 }
             }
 
-            // Feature Row
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.Center
+                        .padding(horizontal = 16.dp, vertical = 24.dp), // Padding vertikal ditambah sedikit
+                    horizontalArrangement = Arrangement.SpaceAround // Menggunakan SpaceAround
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        FeatureItem(
-                            icon = Icons.Default.Favorite,
-                            label = "CVD Risk Predictor",
-                            onClick = { navController.navigate("cvd_risk") }
-                        )
-                        FeatureItem(
-                            icon = Icons.Default.Restaurant,
-                            label = "Personalized Diet Program",
-                            onClick = { navController.navigate("diet_program") }
-                        )
-                        FeatureItem(
-                            icon = Icons.Default.Chat,
-                            label = "Chatbot",
-                            onClick = { navController.navigate("chatbot") }
-                        )
-                    }
+                    FeatureItem(
+                        icon = Icons.Default.Favorite,
+                        label = "CVD Risk Predictor",
+                        onClick = { navController.navigate("cvd_risk") },
+                        modifier = Modifier.weight(1f) // MEMBAGI RUANG MERATA
+                    )
+                    FeatureItem(
+                        icon = Icons.Default.Restaurant,
+                        label = "Personalized Diet Program",
+                        onClick = { navController.navigate("diet_program") },
+                        modifier = Modifier.weight(1f) // MEMBAGI RUANG MERATA
+                    )
+                    FeatureItem(
+                        icon = Icons.Default.Chat,
+                        label = "Chatbot",
+                        onClick = { navController.navigate("chatbot") },
+                        modifier = Modifier.weight(1f) // MEMBAGI RUANG MERATA
+                    )
                 }
             }
 
@@ -218,11 +217,12 @@ fun HomeScreen(
 fun FeatureItem(
     icon: ImageVector,
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick)
+        modifier = modifier.clickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
@@ -246,7 +246,9 @@ fun FeatureItem(
         Text(
             text = label,
             fontSize = 12.sp,
-            color = Color.Black
+            color = Color.Black,
+            textAlign = TextAlign.Center,
+            lineHeight = 14.sp
         )
     }
 }

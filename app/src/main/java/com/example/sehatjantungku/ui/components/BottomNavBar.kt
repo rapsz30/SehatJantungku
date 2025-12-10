@@ -3,7 +3,7 @@ package com.example.sehatjantungku.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Article
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Settings 
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Settings

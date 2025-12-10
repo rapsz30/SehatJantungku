@@ -15,7 +15,6 @@ import com.example.sehatjantungku.ui.screens.settings.SettingsScreen
 import com.example.sehatjantungku.ui.screens.profile.ProfileScreen
 import com.example.sehatjantungku.ui.screens.notifications.NotificationsScreen
 import com.example.sehatjantungku.ui.screens.cvdrisk.CVDRiskScreen
-import com.example.sehatjantungku.ui.screens.cvdrisk.CVDRiskResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietProgramScreen
 import com.example.sehatjantungku.ui.screens.diet.DietResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietStartScreen
@@ -28,6 +27,7 @@ import com.example.sehatjantungku.ui.screens.settings.PasswordChangeScreen
 import com.example.sehatjantungku.ui.screens.settings.LanguageScreen
 import com.example.sehatjantungku.ui.screens.settings.HelpCenterScreen
 import com.example.sehatjantungku.ui.screens.chatbot.ChatbotScreen
+import com.example.sehatjantungku.ui.screens.cvdrisk.CVDResultScreen
 
 @Composable
 fun SehatJantungkuNavigation() {
@@ -79,7 +79,7 @@ fun SehatJantungkuNavigation() {
         ) { backStackEntry ->
             val heartAge = backStackEntry.arguments?.getInt("heartAge") ?: 0
             val riskScore = backStackEntry.arguments?.getInt("riskScore") ?: 0
-            CVDRiskResultScreen(navController, heartAge, riskScore)
+            CVDResultScreen(navController, heartAge, riskScore)
         }
 
         composable("diet_program") {

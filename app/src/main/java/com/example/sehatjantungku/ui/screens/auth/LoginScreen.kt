@@ -22,6 +22,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.text.input.KeyboardType // Import tambahan
+import androidx.compose.ui.text.input.ImeAction // Import tambahan
+import androidx.compose.foundation.text.KeyboardOptions // Import tambahan
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +45,9 @@ fun LoginScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(
+                    WindowInsets.systemBars.only(WindowInsetsSides.Top)
+                )
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -81,6 +88,8 @@ fun LoginScreen(navController: NavController) {
                     Icon(Icons.Default.Email, contentDescription = "Email")
                 },
                 modifier = Modifier.fillMaxWidth(),
+                singleLine = true, // DITAMBAHKAN
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next), // DITAMBAHKAN
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -108,6 +117,8 @@ fun LoginScreen(navController: NavController) {
                 },
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
+                singleLine = true, // DITAMBAHKAN
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done), // DITAMBAHKAN
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -123,7 +134,7 @@ fun LoginScreen(navController: NavController) {
                 color = pinkColor,
                 modifier = Modifier
                     .align(Alignment.End)
-                    .clickable { navController.navigate("forgot-password") },
+                    .clickable { navController.navigate("forgot_password") },
                 fontSize = 14.sp
             )
 

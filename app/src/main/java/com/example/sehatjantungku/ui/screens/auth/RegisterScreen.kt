@@ -20,6 +20,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.text.input.KeyboardType // Import tambahan
+import androidx.compose.ui.text.input.ImeAction // Import tambahan
+import androidx.compose.foundation.text.KeyboardOptions // Import tambahan
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +48,9 @@ fun RegisterScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(
+                    WindowInsets.systemBars.only(WindowInsetsSides.Top)
+                )
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -85,6 +92,8 @@ fun RegisterScreen(navController: NavController) {
                     Icon(Icons.Default.Person, contentDescription = "Name")
                 },
                 modifier = Modifier.fillMaxWidth(),
+                singleLine = true, // DITAMBAHKAN
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), // DITAMBAHKAN
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -103,6 +112,8 @@ fun RegisterScreen(navController: NavController) {
                     Icon(Icons.Default.Email, contentDescription = "Email")
                 },
                 modifier = Modifier.fillMaxWidth(),
+                singleLine = true, // DITAMBAHKAN
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next), // DITAMBAHKAN
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -121,6 +132,8 @@ fun RegisterScreen(navController: NavController) {
                     Icon(Icons.Default.Phone, contentDescription = "Phone")
                 },
                 modifier = Modifier.fillMaxWidth(),
+                singleLine = true, // DITAMBAHKAN
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next), // DITAMBAHKAN
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -148,6 +161,8 @@ fun RegisterScreen(navController: NavController) {
                 },
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
+                singleLine = true, // DITAMBAHKAN
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next), // DITAMBAHKAN
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -175,6 +190,8 @@ fun RegisterScreen(navController: NavController) {
                 },
                 visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
+                singleLine = true, // DITAMBAHKAN
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done), // DITAMBAHKAN
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
