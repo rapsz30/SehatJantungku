@@ -99,23 +99,21 @@ class CVDRiskViewModel : ViewModel() {
 
     // --------------------- SIGMA BETA X → NORMAL ---------------------
     private fun calculateLogHazardRatioNormal(isMale: Boolean): Double {
-        val ageLn = ln(30.0)   // 3.40119782
+
+        val ageLn = ln(30.0)      // = 3.40119782
         val sbpLn = ln(125.0)
         val bmiLn = ln(22.5)
 
         return if (isMale) {
-            // male = 3.11296 * ageLn + 1.85508 * ln(125) + 0.79277 * ln(22.5)
             3.11296 * ageLn +
                     1.85508 * sbpLn +
                     0.79277 * bmiLn
         } else {
-            // female = 2.72107 * ageLn + 2.81291 * ln(125) + 0.51125 * ln(22.5)
             2.72107 * ageLn +
                     2.81291 * sbpLn +
                     0.51125 * bmiLn
         }
     }
-
 
     // -------------------------- RISK SCORE --------------------------
     private fun calculateRiskDecimal(betaX: Double, isMale: Boolean): Double {
@@ -144,6 +142,7 @@ class CVDRiskViewModel : ViewModel() {
             return Pair("0.0,0.0,0.0", fallback)
         }
 
+        // User Risk
         val userBetaX = calculateLogHazardRatio(
             gender = s.gender,
             age = age,
@@ -155,13 +154,15 @@ class CVDRiskViewModel : ViewModel() {
         )
         val userRisk = calculateRiskDecimal(userBetaX, isMale)
 
+        // Optimal Risk
         val optimalBetaX = calculateLogHazardRatioOptimal(isMale)
         val optimalRisk = calculateRiskDecimal(optimalBetaX, isMale)
 
+        // Normal Risk
         val normalBetaX = calculateLogHazardRatioNormal(isMale)
         val normalRisk = calculateRiskDecimal(normalBetaX, isMale)
 
-        // heart age placeholder
+        // Heart age (placeholder formula)
         val riskPercent = (userRisk * 100).roundToInt()
         val heartAge = (age + riskPercent * 0.25).roundToInt()
             .coerceAtLeast(age.roundToInt())
