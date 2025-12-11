@@ -71,15 +71,23 @@ fun SehatJantungkuNavigation() {
             CVDRiskScreen(navController)
         }
         composable(
-            route = "cvd_risk_result/{heartAge}/{riskScore}", // Fixed parameter order to match function signature
+            // Nama parameter di URL disesuaikan dengan isi yang dikirim (riskScoresString)
+            route = "cvd_risk_result/{riskScoresString}/{heartAge}",
             arguments = listOf(
-                navArgument("heartAge") { type = NavType.IntType },
-                navArgument("riskScore") { type = NavType.IntType }
+                // PERBAIKAN: Mengubah tipe dari IntType menjadi StringType
+                navArgument("riskScoresString") { type = NavType.StringType },
+                // HeartAge tetap IntType
+                navArgument("heartAge") { type = NavType.IntType }
             )
         ) { backStackEntry ->
+            // Mengambil argumen pertama sebagai String
+            val riskScoresString = backStackEntry.arguments?.getString("riskScoresString") ?: "0.0,0.0,0.0"
+            // Mengambil argumen kedua sebagai Int
             val heartAge = backStackEntry.arguments?.getInt("heartAge") ?: 0
-            val riskScore = backStackEntry.arguments?.getInt("riskScore") ?: 0
-            CVDResultScreen(navController, heartAge, riskScore)
+
+            // Perhatikan urutan parameter: CVDResultScreen(navController, heartAge, riskScoresString)
+            // CVDResultScreen di file Anda menerima parameter dalam urutan (heartAge: Int, riskScoresString: String)
+            CVDResultScreen(navController, heartAge, riskScoresString)
         }
 
         composable("diet_program") {

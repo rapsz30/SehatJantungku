@@ -20,33 +20,49 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CVDResultScreen(
     navController: NavController,
     heartAge: Int,
-    riskScore: Int
+    riskScoresString: String // Menerima semua risiko dalam bentuk string koma
 ) {
     val pinkMain = Color(0xFFFF6FB1)
-    val pinkLight = Color(0xFFFF8CCF)
     val purpleLight = Color(0xFFCC7CF0)
 
     val isSaved = remember { mutableStateOf(false) }
     val showSaveDialog = remember { mutableStateOf(false) }
 
-    // Calculate risk category
+    // --- Parsing Risk Scores ---
+    val risks = remember(riskScoresString) {
+        riskScoresString.split(",").map { it.toDoubleOrNull() ?: 0.0 }
+    }
+    val userRiskDecimal = risks.getOrElse(0) { 0.0 }
+    val optimalRiskDecimal = risks.getOrElse(1) { 0.0 }
+    val normalRiskDecimal = risks.getOrElse(2) { 0.0 }
+
+    // Konversi risiko pengguna ke persentase untuk kategori/visualisasi (0-100)
+    val userRiskScorePercent = (userRiskDecimal * 100).roundToInt().coerceIn(0, 100)
+    val normalRiskScorePercent = (normalRiskDecimal * 100).roundToInt().coerceIn(0, 100)
+    val optimalRiskScorePercent = (optimalRiskDecimal * 100).roundToInt().coerceIn(0, 100)
+
+
+    // Calculate risk category (using percentage)
     val riskCategory = when {
-        riskScore < 20 -> "Sangat Rendah"
-        riskScore < 40 -> "Rendah"
-        riskScore < 60 -> "Sedang"
+        // MENGGUNAKAN userRiskScorePercent
+        userRiskScorePercent < 20 -> "Sangat Rendah"
+        userRiskScorePercent < 40 -> "Rendah"
+        userRiskScorePercent < 60 -> "Sedang"
         else -> "Tinggi"
     }
 
     val riskColor = when {
-        riskScore < 20 -> Color(0xFF4CAF50)
-        riskScore < 40 -> Color(0xFF8BC34A)
-        riskScore < 60 -> Color(0xFFFFC107)
+        // MENGGUNAKAN userRiskScorePercent
+        userRiskScorePercent < 20 -> Color(0xFF4CAF50)
+        userRiskScorePercent < 40 -> Color(0xFF8BC34A)
+        userRiskScorePercent < 60 -> Color(0xFFFFC107)
         else -> Color(0xFFF44336)
     }
 
@@ -143,7 +159,8 @@ fun CVDResultScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("Risiko Anda", fontSize = 14.sp)
-                            Text("$riskScore%", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            // Menampilkan nilai desimal murni
+                            Text(String.format("%.6f", userRiskDecimal), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Box(
@@ -154,7 +171,8 @@ fun CVDResultScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(riskScore / 100f)
+                                    // Menggunakan persentase untuk panjang visual
+                                    .fillMaxWidth(userRiskScorePercent / 100f)
                                     .height(30.dp)
                                     .background(
                                         brush = Brush.horizontalGradient(
@@ -175,7 +193,8 @@ fun CVDResultScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("Normal", fontSize = 14.sp)
-                            Text("30-40%", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            // Menampilkan nilai desimal murni
+                            Text(String.format("%.6f", normalRiskDecimal), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Box(
@@ -186,7 +205,8 @@ fun CVDResultScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.35f)
+                                    // Menggunakan persentase untuk panjang visual
+                                    .fillMaxWidth(normalRiskScorePercent / 100f)
                                     .height(30.dp)
                                     .background(
                                         Color(0xFF8BC34A),
@@ -205,7 +225,8 @@ fun CVDResultScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("Optimal", fontSize = 14.sp)
-                            Text("10-20%", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            // Menampilkan nilai desimal murni
+                            Text(String.format("%.6f", optimalRiskDecimal), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Box(
@@ -216,7 +237,8 @@ fun CVDResultScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.15f)
+                                    // Menggunakan persentase untuk panjang visual
+                                    .fillMaxWidth(optimalRiskScorePercent / 100f)
                                     .height(30.dp)
                                     .background(
                                         Color(0xFF4CAF50),
@@ -264,19 +286,22 @@ fun CVDResultScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     val recommendations = when {
-                        riskScore < 20 -> listOf(
+                        // MENGGUNAKAN userRiskScorePercent
+                        userRiskScorePercent < 20 -> listOf(
                             "✓ Pertahankan pola hidup sehat Anda",
                             "✓ Lakukan check-up rutin setiap tahun",
                             "✓ Tetap aktif dan olahraga teratur",
                             "✓ Jaga pola makan seimbang"
                         )
-                        riskScore < 40 -> listOf(
+                        // MENGGUNAKAN userRiskScorePercent
+                        userRiskScorePercent < 40 -> listOf(
                             "⚠ Tingkatkan aktivitas fisik menjadi 30 menit/hari",
                             "⚠ Kurangi konsumsi garam dan lemak jenuh",
                             "⚠ Pantau tekanan darah secara berkala",
                             "⚠ Konsultasi dengan dokter untuk evaluasi"
                         )
-                        riskScore < 60 -> listOf(
+                        // MENGGUNAKAN userRiskScorePercent
+                        userRiskScorePercent < 60 -> listOf(
                             "⚠ Segera konsultasi dengan dokter jantung",
                             "⚠ Kurangi berat badan jika berlebih",
                             "⚠ Hindari makanan tinggi kolesterol",
