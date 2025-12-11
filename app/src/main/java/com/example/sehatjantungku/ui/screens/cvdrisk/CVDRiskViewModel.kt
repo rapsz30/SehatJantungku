@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlin.math.ln // Natural logarithm (basis e)
-import kotlin.math.exp // e^x
+import kotlin.math.ln
+import kotlin.math.exp
+import kotlin.math.pow
 import kotlin.math.roundToInt
-import kotlin.math.pow // base^exponent
 
 data class CVDRiskState(
     val gender: String = "",
@@ -22,56 +22,32 @@ data class CVDRiskState(
 )
 
 class CVDRiskViewModel : ViewModel() {
+
     private val _state = MutableStateFlow(CVDRiskState())
     val state: StateFlow<CVDRiskState> = _state.asStateFlow()
 
-    fun updateGender(gender: String) {
-        _state.value = _state.value.copy(gender = gender)
-    }
-
-    fun updateAge(age: String) {
-        _state.value = _state.value.copy(age = age)
-    }
-
-    fun updateHeight(height: String) {
-        _state.value = _state.value.copy(height = height)
-    }
-
-    fun updateWeight(weight: String) {
-        _state.value = _state.value.copy(weight = weight)
-    }
-
-    fun updateBloodPressure(bp: String) {
-        _state.value = _state.value.copy(bloodPressure = bp)
-    }
-
-    fun updateDiabetes(value: Boolean) {
-        _state.value = _state.value.copy(diabetes = value)
-    }
-
-    fun updateSmoker(value: Boolean) {
-        _state.value = _state.value.copy(smoker = value)
-    }
-
-    fun updateHypertension(value: Boolean) {
-        _state.value = _state.value.copy(hypertension = value)
-    }
+    // -------------------------- INPUT HANDLER --------------------------
+    fun updateGender(value: String) { _state.value = _state.value.copy(gender = value) }
+    fun updateAge(value: String) { _state.value = _state.value.copy(age = value) }
+    fun updateHeight(value: String) { _state.value = _state.value.copy(height = value) }
+    fun updateWeight(value: String) { _state.value = _state.value.copy(weight = value) }
+    fun updateBloodPressure(value: String) { _state.value = _state.value.copy(bloodPressure = value) }
+    fun updateDiabetes(value: Boolean) { _state.value = _state.value.copy(diabetes = value) }
+    fun updateSmoker(value: Boolean) { _state.value = _state.value.copy(smoker = value) }
+    fun updateHypertension(value: Boolean) { _state.value = _state.value.copy(hypertension = value) }
 
     fun calculateBMI() {
-        val height = _state.value.height.toDoubleOrNull() ?: 0.0
-        val weight = _state.value.weight.toDoubleOrNull() ?: 0.0
-
-        if (height > 0 && weight > 0) {
-            val bmi = weight / (height.pow(2))
+        val h = _state.value.height.toDoubleOrNull() ?: 0.0
+        val w = _state.value.weight.toDoubleOrNull() ?: 0.0
+        if (h > 0 && w > 0) {
+            val bmi = w / (h * h)
             _state.value = _state.value.copy(bmi = String.format("%.2f", bmi))
         } else {
             _state.value = _state.value.copy(bmi = "")
         }
     }
 
-    /**
-     * Helper function untuk menghitung Σβx Risk (untuk user).
-     */
+    // ---------------------- SIGMA BETA X → USER RISK ----------------------
     private fun calculateLogHazardRatio(
         gender: String,
         age: Double,
@@ -81,41 +57,36 @@ class CVDRiskViewModel : ViewModel() {
         isSmoker: Boolean,
         hasDiabetes: Boolean
     ): Double {
-        // M Values (Variabel Biner dan Logaritma)
+
+        val lnAge = ln(age)
+        val lnSBP = ln(bloodPressure)
+        val lnBMI = ln(bmi)
+
         val trtbp = if (hasHypertension) 1.0 else 0.0
         val smoke = if (isSmoker) 1.0 else 0.0
         val diab = if (hasDiabetes) 1.0 else 0.0
 
-        val umur = if (age > 0) ln(age) else 0.0
-        val sbp = if (bloodPressure > 0) ln(bloodPressure) else 0.0
-        val bmindex = if (bmi > 0) ln(bmi) else 0.0
-
         return if (gender == "Pria") {
             // Male
             if (trtbp == 0.0) {
-                // Male No Treatment
-                umur * 3.11296 + sbp * 1.92672 + smoke * 0.70953 + bmindex * 0.79277 + diab * 0.5316
+                lnAge * 3.11296 + lnSBP * 1.92672 + smoke * 0.70953 + lnBMI * 0.79277 + diab * 0.5316
             } else {
-                // Male Treatment
-                umur * 3.11296 + sbp * 1.85508 + smoke * 0.70953 + bmindex * 0.79277 + diab * 0.5316
+                lnAge * 3.11296 + lnSBP * 1.85508 + smoke * 0.70953 + lnBMI * 0.79277 + diab * 0.5316
             }
         } else {
             // Female
             if (trtbp == 0.0) {
-                // Female No Treatment
-                umur * 2.72107 + sbp * 2.81291 + smoke * 0.61868 + bmindex * 0.51125 + diab * 0.77763
+                lnAge * 2.72107 + lnSBP * 2.81291 + smoke * 0.61868 + lnBMI * 0.51125 + diab * 0.77763
             } else {
-                // Female Treatment
-                umur * 2.72107 + sbp * 2.88267 + smoke * 0.61868 + bmindex * 0.51125 + diab * 0.77763
+                lnAge * 2.72107 + lnSBP * 2.88267 + smoke * 0.61868 + lnBMI * 0.51125 + diab * 0.77763
             }
         }
     }
 
-    /**
-     * Helper function untuk menghitung Σβx Optimal.
-     */
+    // --------------------- SIGMA BETA X → OPTIMAL ---------------------
     private fun calculateLogHazardRatioOptimal(isMale: Boolean): Double {
-        val ageLn = ln(3.40119782) // Asumsi 3.40119782 adalah Age Ln Optimal
+
+        val ageLn = 3.40119782        // FIX: langsung pakai, jangan ln()
         val sbpLn = ln(110.0)
         val bmiLn = ln(22.0)
 
@@ -126,84 +97,77 @@ class CVDRiskViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Helper function untuk menghitung Σβx Normal.
-     */
+    // --------------------- SIGMA BETA X → NORMAL ---------------------
     private fun calculateLogHazardRatioNormal(isMale: Boolean): Double {
-        val ageLn = ln(3.40119782) // Asumsi 3.40119782 adalah Age Ln Normal
-        val sbpLnMale = ln(125.0)
-        val sbpLnFemale = ln(110.0)
-        val bmiLnMale = ln(22.0)
-        val bmiLnFemale = ln(22.5)
+        val ageLn = ln(30.0)   // 3.40119782
+        val sbpLn = ln(125.0)
+        val bmiLn = ln(22.5)
 
         return if (isMale) {
-            3.11296 * ageLn + 1.85508 * sbpLnMale + 0.79277 * bmiLnMale
+            // male = 3.11296 * ageLn + 1.85508 * ln(125) + 0.79277 * ln(22.5)
+            3.11296 * ageLn +
+                    1.85508 * sbpLn +
+                    0.79277 * bmiLn
         } else {
-            2.72107 * ageLn + 2.81291 * sbpLnFemale + 0.51125 * bmiLnFemale
+            // female = 2.72107 * ageLn + 2.81291 * ln(125) + 0.51125 * ln(22.5)
+            2.72107 * ageLn +
+                    2.81291 * sbpLn +
+                    0.51125 * bmiLn
         }
     }
 
 
-    /**
-     * Helper function untuk menghitung Risk Score (desimal murni) dari Σβx.
-     * Formula: 1 - BaselineSurvival^exp(Σβx - BaselineLogHazardRatio)
-     */
-    private fun calculateRiskDecimal(riskLogHazardRatio: Double, isMale: Boolean): Double {
+    // -------------------------- RISK SCORE --------------------------
+    private fun calculateRiskDecimal(betaX: Double, isMale: Boolean): Double {
+
         val baselineSurvival = if (isMale) 0.88431 else 0.94833
-        val baselineLogHazardRatio = if (isMale) 23.9388 else 26.0145
+        val baselineLogHazard = if (isMale) 23.9388 else 26.0145
 
-        // Exponent = exp(Σβx - Baseline Log Hazard Ratio)
-        val exponent = exp(riskLogHazardRatio - baselineLogHazardRatio)
+        // exp(Σβx - B)
+        val exponent = exp(betaX - baselineLogHazard)
 
-        // Risk Score = 1 - BaselineSurvival^Exponent
+        // Risk = 1 - S0 ^ exponent
         return 1.0 - baselineSurvival.pow(exponent)
     }
 
-    /**
-     * Menghitung semua Risk Scores.
-     * Mengembalikan Pair<String, Int> di mana:
-     * - First (String): Comma-separated string of risk scores (UserRisk, OptimalRisk, NormalRisk) dalam format desimal.
-     * - Second (Int): Heart Age
-     */
+    // ---------------------- FINAL CALCULATION ----------------------
     fun calculateRisk(): Pair<String, Int> {
-        val currentState = _state.value
-        val age = currentState.age.toDoubleOrNull() ?: 0.0
-        val bp = currentState.bloodPressure.toDoubleOrNull() ?: 0.0
-        val bmi = currentState.bmi.toDoubleOrNull() ?: 0.0
-        val isMale = (currentState.gender == "Pria")
 
-        if (age <= 0 || bp <= 0 || bmi <= 0 || currentState.gender.isEmpty()) {
-            val defaultAge = age.roundToInt().coerceAtLeast(1)
-            return Pair("0.0,0.0,0.0", defaultAge)
+        val s = _state.value
+        val age = s.age.toDoubleOrNull() ?: 0.0
+        val sbp = s.bloodPressure.toDoubleOrNull() ?: 0.0
+        val bmi = s.bmi.toDoubleOrNull() ?: 0.0
+        val isMale = s.gender == "Pria"
+
+        if (age <= 0 || sbp <= 0 || bmi <= 0 || s.gender.isEmpty()) {
+            val fallback = age.roundToInt().coerceAtLeast(1)
+            return Pair("0.0,0.0,0.0", fallback)
         }
 
-        // --- 1. Hitung User Risk ---
-        val sigmaBetaXRisk = calculateLogHazardRatio(
-            gender = currentState.gender,
+        val userBetaX = calculateLogHazardRatio(
+            gender = s.gender,
             age = age,
-            bloodPressure = bp,
+            bloodPressure = sbp,
             bmi = bmi,
-            hasHypertension = currentState.hypertension,
-            isSmoker = currentState.smoker,
-            hasDiabetes = currentState.diabetes
+            hasHypertension = s.hypertension,
+            isSmoker = s.smoker,
+            hasDiabetes = s.diabetes
         )
-        val userRisk = calculateRiskDecimal(sigmaBetaXRisk, isMale)
+        val userRisk = calculateRiskDecimal(userBetaX, isMale)
 
-        // --- 2. Hitung Optimal Risk ---
-        val sigmaBetaXOptimal = calculateLogHazardRatioOptimal(isMale)
-        val optimalRisk = calculateRiskDecimal(sigmaBetaXOptimal, isMale)
+        val optimalBetaX = calculateLogHazardRatioOptimal(isMale)
+        val optimalRisk = calculateRiskDecimal(optimalBetaX, isMale)
 
-        // --- 3. Hitung Normal Risk ---
-        val sigmaBetaXNormal = calculateLogHazardRatioNormal(isMale)
-        val normalRisk = calculateRiskDecimal(sigmaBetaXNormal, isMale)
+        val normalBetaX = calculateLogHazardRatioNormal(isMale)
+        val normalRisk = calculateRiskDecimal(normalBetaX, isMale)
 
-        // --- 4. Heart Age Placeholder (Menggunakan rumus simulasi lama) ---
-        val userRiskPercentage = (userRisk * 100).roundToInt().coerceIn(0, 100)
-        val heartAgePlaceholder = (age + (userRiskPercentage * 0.25)).roundToInt().coerceAtLeast(age.roundToInt())
+        // heart age placeholder
+        val riskPercent = (userRisk * 100).roundToInt()
+        val heartAge = (age + riskPercent * 0.25).roundToInt()
+            .coerceAtLeast(age.roundToInt())
 
-        // Format hasil sebagai string: "UserRisk,OptimalRisk,NormalRisk" (hingga 6 desimal)
         val riskString = String.format("%.6f,%.6f,%.6f", userRisk, optimalRisk, normalRisk)
 
-        return Pair(riskString, heartAgePlaceholder)
+        return Pair(riskString, heartAge)
     }
 }
