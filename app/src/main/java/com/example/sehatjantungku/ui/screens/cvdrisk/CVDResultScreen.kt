@@ -160,7 +160,7 @@ fun CVDResultScreen(
                         ) {
                             Text("Risiko Anda", fontSize = 14.sp)
                             // Menampilkan nilai desimal murni
-                            Text(String.format("%.6f", userRiskDecimal), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(String.format("%.3f%%", userRiskDecimal * 100), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Box(
@@ -194,7 +194,7 @@ fun CVDResultScreen(
                         ) {
                             Text("Normal", fontSize = 14.sp)
                             // Menampilkan nilai desimal murni
-                            Text(String.format("%.6f", normalRiskDecimal), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(String.format("%.3f%%", normalRiskDecimal * 100), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Box(
@@ -226,7 +226,7 @@ fun CVDResultScreen(
                         ) {
                             Text("Optimal", fontSize = 14.sp)
                             // Menampilkan nilai desimal murni
-                            Text(String.format("%.6f", optimalRiskDecimal), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(String.format("%.3f%%", optimalRiskDecimal * 100), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Box(
