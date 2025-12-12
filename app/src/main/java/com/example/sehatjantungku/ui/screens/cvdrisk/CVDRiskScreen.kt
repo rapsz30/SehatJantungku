@@ -226,7 +226,8 @@ fun CVDRiskScreen(
                         focusedBorderColor = PinkMain,
                         unfocusedBorderColor = Color(0xFFD1D5DB)
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    // FIX: keyboardOptions DIHILANGKAN
                 )
             }
 
@@ -262,7 +263,8 @@ fun CVDRiskScreen(
                                 focusedBorderColor = PinkMain,
                                 unfocusedBorderColor = Color(0xFFD1D5DB)
                             ),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(8.dp),
+                            // FIX: keyboardOptions DIHILANGKAN
                         )
                     }
 
@@ -283,7 +285,8 @@ fun CVDRiskScreen(
                                 focusedBorderColor = PinkMain,
                                 unfocusedBorderColor = Color(0xFFD1D5DB)
                             ),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(8.dp),
+                            // FIX: keyboardOptions DIHILANGKAN
                         )
                     }
                 }
@@ -353,7 +356,8 @@ fun CVDRiskScreen(
                         focusedBorderColor = PinkMain,
                         unfocusedBorderColor = Color(0xFFD1D5DB)
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    // FIX: keyboardOptions DIHILANGKAN
                 )
 
                 HealthQuestionItem("Diabetes", state.diabetes) { viewModel.updateDiabetes(it) }
@@ -369,7 +373,6 @@ fun CVDRiskScreen(
                 Button(
                     onClick = {
                         val result = viewModel.calculateRisk()
-                        // Menggunakan rute yang diperbaiki di Navigation.kt (riskScore/heartAge)
                         navController.navigate("cvd_risk_result/${result.first}/${result.second}")
                     },
                     modifier = Modifier
