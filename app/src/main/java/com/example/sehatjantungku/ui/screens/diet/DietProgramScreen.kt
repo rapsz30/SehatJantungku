@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +35,10 @@ fun DietProgramScreen(
     val state by viewModel.state.collectAsState()
     var showInfo by remember { mutableStateOf(false) }
     var useCVDData by remember { mutableStateOf(false) }
-    val cvdDataAvailable = remember { mutableStateOf(false) } // Check from SharedPreferences
+
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("SehatJantungku", Context.MODE_PRIVATE)
+    val cvdDataAvailable = remember { sharedPreferences.contains("cvd_risk_score") }
 
     if (showInfo) {
         AlertDialog(
@@ -85,126 +90,215 @@ fun DietProgramScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
-            // Question 1
+            // Question 1 - Blood Pressure
             QuestionItem(
-                number = "1️⃣",
-                question = "Apa tujuan Anda saat ini?",
-                options = listOf("Menurunkan berat badan", "Menjaga berat badan", "Menambah berat badan"),
-                selectedOption = state.goal,
-                onOptionSelected = { viewModel.updateGoal(it) }
+                number = "1️",
+                question = "Bagaimana kondisi tekanan darah kamu saat ini?",
+                options = listOf("Normal / terkontrol", "Kadang tinggi", "Sering tinggi / didiagnosis darah tinggi", "Tidak tahu"),
+                selectedOption = state.bloodPressure,
+                onOptionSelected = { viewModel.updateBloodPressure(it) }
             )
 
-            // Question 2
+            // Question 2 - Cholesterol
             QuestionItem(
-                number = "2️⃣",
-                question = "Seberapa ketat Anda ingin mengurangi garam?",
-                options = listOf("Sangat ketat", "Cukup ketat", "Tidak terlalu ketat"),
-                selectedOption = state.saltReduction,
-                onOptionSelected = { viewModel.updateSaltReduction(it) }
+                number = "2️",
+                question = "Bagaimana kondisi kolesterol kamu?",
+                options = listOf("Normal", "Agak tinggi", "Tinggi / pernah disarankan diet", "Tidak tahu"),
+                selectedOption = state.cholesterol,
+                onOptionSelected = { viewModel.updateCholesterol(it) }
             )
 
-            // Question 3
-            QuestionItem(
-                number = "3️⃣",
-                question = "Apakah Anda ingin mengurangi makanan berlemak/berminyak?",
-                options = listOf("Ya, sangat ingin", "Ingin sedikit saja", "Tidak terlalu peduli"),
-                selectedOption = state.fatReduction,
-                onOptionSelected = { viewModel.updateFatReduction(it) }
-            )
+            // Question 3 - Health Conditions (Multiple checkboxes)
+            Column {
+                Text(
+                    "3️ Apakah kamu memiliki kondisi kesehatan berikut?",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1F2937),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
-            // Question 4
-            QuestionItem(
-                number = "4️⃣",
-                question = "Anda lebih suka makanan kaya sayur & buah?",
-                options = listOf("Ya", "Biasa saja", "Tidak terlalu"),
-                selectedOption = state.vegetablePreference,
-                onOptionSelected = { viewModel.updateVegetablePreference(it) }
-            )
-
-            // Question 5
-            QuestionItem(
-                number = "5️⃣",
-                question = "Apakah Anda ingin membatasi konsumsi telur, daging merah, dan santan?",
-                options = listOf("Ya, batasi banyak", "Batasi sedikit", "Tidak masalah"),
-                selectedOption = state.meatRestriction,
-                onOptionSelected = { viewModel.updateMeatRestriction(it) }
-            )
-
-            // Question 6
-            QuestionItem(
-                number = "6️⃣",
-                question = "Apakah Anda nyaman makan buah & sayur setiap hari?",
-                options = listOf("Sangat nyaman", "Kadang-kadang", "Tidak terlalu suka"),
-                selectedOption = state.dailyVegetable,
-                onOptionSelected = { viewModel.updateDailyVegetable(it) }
-            )
-
-            // CVD Data Checkbox (if available)
-            if (cvdDataAvailable.value) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
-                    elevation = CardDefaults.cardElevation(2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = null,
-                                tint = Color(0xFF3B82F6),
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "Data CVD Risk Tersedia",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E40AF)
-                                )
-                                Text(
-                                    "Gunakan hasil prediksi CVD Anda untuk rekomendasi diet yang lebih tepat sasaran",
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF1E40AF),
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    listOf("Tekanan darah tinggi", "Kolesterol tinggi", "Diabetes", "Asam urat", "Tidak ada").forEach { condition ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(2.dp, Color(0xFF3B82F6), RoundedCornerShape(12.dp))
-                                .clickable { useCVDData = !useCVDData }
+                                .border(
+                                    width = 2.dp,
+                                    color = if (state.healthConditions.contains(condition)) pinkMain else Color(0xFFE5E7EB),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .background(
+                                    color = if (state.healthConditions.contains(condition)) Color(0xFFFCE7F3) else Color.White,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable { viewModel.toggleHealthCondition(condition) }
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
-                                checked = useCVDData,
-                                onCheckedChange = { useCVDData = it },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3B82F6))
+                                checked = state.healthConditions.contains(condition),
+                                onCheckedChange = { viewModel.toggleHealthCondition(condition) },
+                                colors = CheckboxDefaults.colors(checkedColor = pinkMain)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                "Pertimbangkan hasil CVD Risk saya",
+                                condition,
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF1E40AF),
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF1F2937),
                                 modifier = Modifier.weight(1f)
                             )
-                            if (useCVDData) {
+                            if (state.healthConditions.contains(condition)) {
                                 Icon(
                                     Icons.Default.CheckCircle,
                                     contentDescription = null,
-                                    tint = Color(0xFF3B82F6),
+                                    tint = pinkMain,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            // Question 4 - Food Preference
+            QuestionItem(
+                number = "4️",
+                question = "Makanan seperti apa yang paling nyaman buat kamu jalani?",
+                options = listOf("Nabati dominan", "Hewani dominan", "Nabati dan hewani seimbang", "Praktis / instan (makanan cepat saji atau instan)"),
+                selectedOption = state.foodPreference,
+                onOptionSelected = { viewModel.updateFoodPreference(it) }
+            )
+
+            // Question 5 - Activity Level
+            QuestionItem(
+                number = "5️",
+                question = "Dalam keseharian, seberapa aktif kamu bergerak atau berolahraga?",
+                options = listOf("Jarang bergerak (lebih banyak duduk)", "Kadang aktif (jalan santai, aktivitas ringan)", "Cukup aktif (olahraga ringan 2-3x/minggu)", "Sangat aktif (olahraga rutin ≥4x/minggu)"),
+                selectedOption = state.activityLevel,
+                onOptionSelected = { viewModel.updateActivityLevel(it) }
+            )
+
+            // Question 6 - Commitment
+            QuestionItem(
+                number = "6️",
+                question = "Seberapa yakin kamu bisa konsisten menjalani pola makan sehat?",
+                options = listOf("Sulit", "Lumayan", "Cukup yakin", "Sangat yakin"),
+                selectedOption = state.commitment,
+                onOptionSelected = { viewModel.updateCommitment(it) }
+            )
+
+            // Question 7 - CVD Risk Consideration
+            Column {
+                Text(
+                    "7️ Apakah kamu ingin rekomendasi diet ini mempertimbangkan hasil risiko penyakit jantung kamu?",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1F2937),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Option 1: Yes, consider CVD risk
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                width = 2.dp,
+                                color = if (useCVDData && cvdDataAvailable) Color(0xFF3B82F6) else Color(0xFFE5E7EB),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .background(
+                                color = if (useCVDData && cvdDataAvailable) Color(0xFFEFF6FF) else Color.White,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable(enabled = cvdDataAvailable) {
+                                useCVDData = true
+                                viewModel.updateUseCVDData(true)
+                            }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = useCVDData && cvdDataAvailable,
+                            onCheckedChange = {
+                                useCVDData = it
+                                viewModel.updateUseCVDData(it)
+                            },
+                            enabled = cvdDataAvailable,
+                            colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3B82F6))
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Ya, pertimbangkan risiko jantung saya",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (cvdDataAvailable) Color(0xFF1F2937) else Color(0xFF9CA3AF)
+                            )
+                            if (!cvdDataAvailable) {
+                                Text(
+                                    "(Lakukan CVD Risk Predictor terlebih dahulu)",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF9CA3AF),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+                        if (useCVDData && cvdDataAvailable) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF3B82F6),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    // Option 2: No, general recommendation
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                width = 2.dp,
+                                color = if (!useCVDData) pinkMain else Color(0xFFE5E7EB),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .background(
+                                color = if (!useCVDData) Color(0xFFFCE7F3) else Color.White,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable {
+                                useCVDData = false
+                                viewModel.updateUseCVDData(false)
+                            }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = !useCVDData,
+                            onCheckedChange = {
+                                useCVDData = !it
+                                viewModel.updateUseCVDData(!it)
+                            },
+                            colors = CheckboxDefaults.colors(checkedColor = pinkMain)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Tidak, saya ingin rekomendasi umum saja",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF1F2937),
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (!useCVDData) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = pinkMain,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
@@ -221,9 +315,9 @@ fun DietProgramScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = pinkMain),
-                enabled = state.goal.isNotEmpty() && state.saltReduction.isNotEmpty() &&
-                        state.fatReduction.isNotEmpty() && state.vegetablePreference.isNotEmpty() &&
-                        state.meatRestriction.isNotEmpty() && state.dailyVegetable.isNotEmpty()
+                enabled = state.bloodPressure.isNotEmpty() && state.cholesterol.isNotEmpty() &&
+                        state.foodPreference.isNotEmpty() && state.activityLevel.isNotEmpty() &&
+                        state.commitment.isNotEmpty()
             ) {
                 Text("Dapatkan Rekomendasi Diet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }

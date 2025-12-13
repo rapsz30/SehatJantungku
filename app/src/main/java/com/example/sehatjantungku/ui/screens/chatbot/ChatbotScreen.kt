@@ -1,3 +1,4 @@
+// ChatbotScreen.kt (Kode Lengkap)
 package com.example.sehatjantungku.ui.screens.chatbot
 
 import androidx.compose.foundation.background
@@ -17,16 +18,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel // <-- Tambahkan import ini!
 
-data class ChatMessage(
-    val message: String,
-    val isUser: Boolean
-)
+// HAPUS data class ChatMessage dari file ini, karena sudah ada di ChatbotViewModel.kt!
+// Jika Anda ingin mempertahankan ChatMessage di file ini, hapus dari ViewModel,
+// tapi praktik terbaik adalah menyimpannya bersama logika state di ViewModel.
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatbotScreen(navController: NavController) {
-    var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
+fun ChatbotScreen(
+    navController: NavController,
+    // Menggunakan ViewModel untuk mengelola state dan API
+    viewModel: ChatbotViewModel = viewModel()
+) {
+    // Ambil state pesan dari ViewModel (akan otomatis terupdate)
+    val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
 
     val pinkMain = Color(0xFFFF6FB1)
@@ -38,7 +44,7 @@ fun ChatbotScreen(navController: NavController) {
                     Column {
                         Text("Chatbot", fontWeight = FontWeight.Bold)
                         Text(
-                            "Asisten Kesehatan Jantung 24/7",
+                            "Asisten Kesehatan Jantung",
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
@@ -46,11 +52,12 @@ fun ChatbotScreen(navController: NavController) {
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, "Kembali")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Kembali")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
                 )
             )
         }
@@ -66,13 +73,17 @@ fun ChatbotScreen(navController: NavController) {
                     .weight(1f)
                     .fillMaxWidth()
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                // Gunakan reverseLayout agar pesan terbaru muncul di bawah (seperti chat)
+                reverseLayout = true
             ) {
-                items(messages) { message ->
+                // Tampilkan pesan dari ViewModel (menggunakan key agar performa bagus)
+                items(messages.reversed(), key = { it.message + it.isUser }) { message ->
                     ChatBubble(message)
                 }
             }
 
+            // Input Area
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -84,10 +95,11 @@ fun ChatbotScreen(navController: NavController) {
                     value = inputText,
                     onValueChange = { inputText = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Ketik pesan...") },
+                    placeholder = { Text("Tanyakan tentang kesehatan jantung...") },
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = pinkMain
+                        focusedBorderColor = pinkMain,
+                        unfocusedBorderColor = Color.LightGray
                     )
                 )
 
@@ -96,14 +108,16 @@ fun ChatbotScreen(navController: NavController) {
                 IconButton(
                     onClick = {
                         if (inputText.isNotBlank()) {
-                            messages = messages + ChatMessage(inputText, true)
-                            messages = messages + ChatMessage("Terima kasih atas pesan Anda. Tim medis kami akan segera merespon.", false)
-                            inputText = ""
+                            // Panggil fungsi pengirim pesan di ViewModel
+                            viewModel.sendMessage(inputText)
+                            inputText = "" // Reset input
                         }
                     },
                     modifier = Modifier
                         .size(48.dp)
-                        .background(pinkMain, RoundedCornerShape(24.dp))
+                        .background(pinkMain, RoundedCornerShape(24.dp)),
+                    // Disable tombol jika input kosong
+                    enabled = inputText.isNotBlank()
                 ) {
                     Icon(
                         Icons.Default.Send,
