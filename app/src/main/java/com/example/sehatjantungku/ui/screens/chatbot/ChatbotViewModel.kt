@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.example.sehatjantungku.BuildConfig
 
-// Data class pesan chat
 data class ChatMessage(
     val message: String,
     val isUser: Boolean
@@ -18,7 +17,6 @@ data class ChatMessage(
 
 class ChatbotViewModel : ViewModel() {
     init {
-        // Baris ini sekarang seharusnya mencetak nilai API Key dan TIDAK menyebabkan crash
         println("DEBUG GEMINI KEY = '${BuildConfig.GEMINI_API_KEY}'")
     }
 
