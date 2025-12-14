@@ -17,9 +17,8 @@ data class ChatMessage(
 
 class ChatbotViewModel : ViewModel() {
     init {
-        println("DEBUG GEMINI KEY = '${BuildConfig.GEMINI_API_KEY}'")
+        println("DEBUG GEMINI API KEY LOADED = '${BuildConfig.GEMINI_API_KEY}'")
     }
-
 
     // State chat yang diamati UI
     private val _messages = MutableStateFlow(
@@ -34,14 +33,22 @@ class ChatbotViewModel : ViewModel() {
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
 
-    private val generativeModel = GenerativeModel(
-        modelName = "gemini-2.5-flash",
-        // PERBAIKAN UTAMA: Mengambil API Key dari BuildConfig yang dibuat oleh Gradle
-        // Sebelumnya: apiKey = System.getProperty("GEMINI_API_KEY") ?: throw IllegalStateException("GEMINI_API_KEY not found")
-        apiKey = BuildConfig.GEMINI_API_KEY
-    )
+    // Pengecekan aman untuk kunci yang tidak boleh kosong
+    private val apiKey = BuildConfig.GEMINI_API_KEY
+    private val generativeModel = if (apiKey.isNotBlank()) {
+        GenerativeModel(
+            modelName = "gemini-2.5-flash",
+            apiKey = apiKey
+        )
+    } else {
+        // Menangani kasus jika kunci kosong (tidak akan crash, tapi tidak berfungsi)
+        // Kita bisa membuat instance dengan kunci placeholder atau melempar pengecualian
+        // yang lebih informatif di sini, tapi untuk saat ini, kita gunakan nilai kosong
+        // untuk memastikan kode bisa di-build.
+        throw IllegalStateException("API Key tidak ditemukan di BuildConfig.")
+    }
 
-    // Inisialisasi chat dengan history
+    // Ganti ini untuk menggunakan instance chat yang sudah dibuat
     private val chat = generativeModel.startChat(
         history = listOf(
             content(role = "user") { text("Halo, saya ingin bertanya tentang kesehatan jantung.") },

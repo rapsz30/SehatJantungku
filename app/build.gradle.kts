@@ -17,12 +17,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField(
-            "String",
-            "GEMINI_API_KEY",
-            "\"${project.findProperty("GEMINI_API_KEY")}\""
-        )
+        val geminiApiKey = project.findProperty("GEMINI_API_KEY")?.toString() ?: ""
 
+        // Suntikkan nilai ke BuildConfig
+        // Pastikan nilai diapit tanda kutip di dalam string ("\"$geminiApiKey\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {
