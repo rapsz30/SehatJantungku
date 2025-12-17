@@ -20,80 +20,72 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.text.input.KeyboardType // Import tambahan
-import androidx.compose.ui.text.input.ImeAction // Import tambahan
-import androidx.compose.foundation.text.KeyboardOptions // Import tambahan
-
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sehatjantungku.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(navController: NavController) {
+fun RegisterScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = viewModel()
+) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
-    var showConfirmPassword by remember { mutableStateOf(false) }
+
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     val pinkColor = Color(0xFFFF6FB1)
     val purpleColor = Color(0xFFCC7CF0)
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
+    // Navigasi otomatis jika registrasi berhasil
+    LaunchedEffect(viewModel.isSuccess) {
+        if (viewModel.isSuccess) {
+            navController.navigate("home") {
+                popUpTo("register") { inclusive = true }
+            }
+        }
+    }
+
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .windowInsetsPadding(
-                    WindowInsets.systemBars.only(WindowInsetsSides.Top)
-                )
-                .padding(24.dp),
+                .padding(paddingValues)
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Logo
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "Logo",
-                modifier = Modifier.size(80.dp),
-                tint = pinkColor
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             Text(
-                text = "SehatJantungku",
-                fontSize = 32.sp,
+                text = "Buat Akun Baru",
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = pinkColor
+                color = Color.Black
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             Text(
-                text = "Buat akun baru",
+                text = "Silakan isi data di bawah ini",
                 fontSize = 16.sp,
                 color = Color.Gray
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Name field
+            // Name Input
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Nama Lengkap") },
-                leadingIcon = {
-                    Icon(Icons.Default.Person, contentDescription = "Name")
-                },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true, // DITAMBAHKAN
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), // DITAMBAHKAN
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = pinkColor) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -103,18 +95,15 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Email field
+            // Email Input
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
-                leadingIcon = {
-                    Icon(Icons.Default.Email, contentDescription = "Email")
-                },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true, // DITAMBAHKAN
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next), // DITAMBAHKAN
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = pinkColor) },
                 shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
                     unfocusedBorderColor = Color.LightGray
@@ -123,18 +112,15 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Phone field
+            // Phone Input
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
                 label = { Text("Nomor Telepon") },
-                leadingIcon = {
-                    Icon(Icons.Default.Phone, contentDescription = "Phone")
-                },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true, // DITAMBAHKAN
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next), // DITAMBAHKAN
+                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = pinkColor) },
                 shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
                     unfocusedBorderColor = Color.LightGray
@@ -143,26 +129,20 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Password field
+            // Password Input
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = "Password")
-                },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = pinkColor) },
                 trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            imageVector = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (showPassword) "Hide password" else "Show password"
-                        )
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
                     }
                 },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true, // DITAMBAHKAN
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next), // DITAMBAHKAN
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -172,26 +152,20 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Confirm password field
+            // Confirm Password Input
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = { Text("Konfirmasi Password") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = "Confirm Password")
-                },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = pinkColor) },
                 trailingIcon = {
-                    IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
-                        Icon(
-                            imageVector = if (showConfirmPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (showConfirmPassword) "Hide password" else "Show password"
-                        )
+                    val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
                     }
                 },
-                visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true, // DITAMBAHKAN
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done), // DITAMBAHKAN
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -199,48 +173,65 @@ fun RegisterScreen(navController: NavController) {
                 )
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Pesan Error
+            if (viewModel.errorMessage != null) {
+                Text(
+                    text = viewModel.errorMessage!!,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            } else if (password != confirmPassword && confirmPassword.isNotEmpty()) {
+                Text(
+                    text = "Password tidak cocok",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
 
-            // Register button
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Register Button
             Button(
-                onClick = { navController.navigate("home") },
+                onClick = {
+                    if (password == confirmPassword) {
+                        viewModel.register(name, email, phone, password)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
+                enabled = !viewModel.isLoading,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(pinkColor, purpleColor)
-                            ),
+                            brush = Brush.horizontalGradient(colors = listOf(pinkColor, purpleColor)),
                             shape = RoundedCornerShape(12.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Daftar",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    if (viewModel.isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(
+                            text = "Daftar",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Login link
             Row {
-                Text(
-                    text = "Sudah punya akun? ",
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
+                Text(text = "Sudah punya akun? ", color = Color.Gray, fontSize = 14.sp)
                 Text(
                     text = "Masuk",
                     color = pinkColor,

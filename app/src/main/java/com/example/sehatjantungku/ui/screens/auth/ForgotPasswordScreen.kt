@@ -16,20 +16,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.text.input.KeyboardType // Import tambahan
-import androidx.compose.ui.text.input.ImeAction // Import tambahan
-import androidx.compose.foundation.text.KeyboardOptions // Import tambahan
-
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sehatjantungku.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ForgotPasswordScreen(navController: NavController) {
+fun ForgotPasswordScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = viewModel()
+) {
     var email by remember { mutableStateOf("") }
-
     val pinkColor = Color(0xFFFF6FB1)
     val purpleColor = Color(0xFFCC7CF0)
 
+    // Snackbar Host State untuk menampilkan pesan sukses/gagal
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Efek samping untuk menangani status keberhasilan dari ViewModel
+    LaunchedEffect(viewModel.isSuccess) {
+        if (viewModel.isSuccess) {
+            snackbarHostState.showSnackbar("Link reset password telah dikirim ke email Anda.")
+            // Reset status di ViewModel agar tidak trigger berulang kali
+            viewModel.isSuccess = false
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Lupa Password") },
@@ -64,7 +80,8 @@ fun ForgotPasswordScreen(navController: NavController) {
             Text(
                 text = "Masukkan email Anda untuk menerima link reset password",
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = Color.Gray,
+                lineHeight = 20.sp
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -74,11 +91,14 @@ fun ForgotPasswordScreen(navController: NavController) {
                 onValueChange = { email = it },
                 label = { Text("Email") },
                 leadingIcon = {
-                    Icon(Icons.Default.Email, contentDescription = "Email")
+                    Icon(Icons.Default.Email, contentDescription = "Email", tint = pinkColor)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true, // DITAMBAHKAN
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done), // DITAMBAHKAN
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Done
+                ),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
@@ -86,13 +106,28 @@ fun ForgotPasswordScreen(navController: NavController) {
                 )
             )
 
+            // Menampilkan Pesan Error dari ViewModel jika ada
+            viewModel.errorMessage?.let {
+                Text(
+                    text = it,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { navController.popBackStack() },
+                onClick = {
+                    if (email.isNotEmpty()) {
+                        viewModel.forgotPassword(email)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
+                enabled = !viewModel.isLoading,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent
@@ -109,12 +144,19 @@ fun ForgotPasswordScreen(navController: NavController) {
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Kirim Link Reset",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    if (viewModel.isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "Kirim Link Reset",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }

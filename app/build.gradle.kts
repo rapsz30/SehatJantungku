@@ -68,6 +68,11 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.ai.client.generativeai:generativeai:0.5.0")
 
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

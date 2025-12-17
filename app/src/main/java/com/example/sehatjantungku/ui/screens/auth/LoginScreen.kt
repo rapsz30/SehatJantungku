@@ -22,54 +22,58 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.text.input.KeyboardType // Import tambahan
-import androidx.compose.ui.text.input.ImeAction // Import tambahan
-import androidx.compose.foundation.text.KeyboardOptions // Import tambahan
-
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sehatjantungku.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = viewModel()
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val pinkColor = Color(0xFFFF6FB1)
     val purpleColor = Color(0xFFCC7CF0)
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
+    // Navigasi otomatis jika login berhasil
+    LaunchedEffect(viewModel.isSuccess) {
+        if (viewModel.isSuccess) {
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(
-                    WindowInsets.systemBars.only(WindowInsetsSides.Top)
-                )
-                .padding(24.dp),
+                .padding(paddingValues)
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = "Logo",
-                modifier = Modifier.size(80.dp),
-                tint = pinkColor
+                tint = pinkColor,
+                modifier = Modifier.size(80.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "SehatJantungku",
-                fontSize = 32.sp,
+                text = "Selamat Datang Kembali",
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = pinkColor
+                color = Color.Black
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Masuk ke akun Anda",
@@ -77,20 +81,20 @@ fun LoginScreen(navController: NavController) {
                 color = Color.Gray
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Email field
+            // Email Input
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
-                leadingIcon = {
-                    Icon(Icons.Default.Email, contentDescription = "Email")
-                },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true, // DITAMBAHKAN
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next), // DITAMBAHKAN
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = pinkColor) },
                 shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
                     unfocusedBorderColor = Color.LightGray
@@ -99,87 +103,94 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Password field
+            // Password Input
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = "Password")
-                },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = pinkColor) },
                 trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            imageVector = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (showPassword) "Hide password" else "Show password"
-                        )
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
                     }
                 },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true, // DITAMBAHKAN
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done), // DITAMBAHKAN
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = pinkColor,
                     unfocusedBorderColor = Color.LightGray
                 )
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // Pesan Error
+            viewModel.errorMessage?.let {
+                Text(
+                    text = it,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
 
-            // Forgot password
-            Text(
-                text = "Lupa password?",
-                color = pinkColor,
+            Box(
                 modifier = Modifier
-                    .align(Alignment.End)
-                    .clickable { navController.navigate("forgot_password") },
-                fontSize = 14.sp
-            )
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Text(
+                    text = "Lupa Password?",
+                    color = pinkColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { navController.navigate("forgot_password") }
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Login button
+            // Login Button
             Button(
-                onClick = { navController.navigate("home") },
+                onClick = { viewModel.login(email, password) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
+                enabled = !viewModel.isLoading,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(pinkColor, purpleColor)
-                            ),
+                            brush = Brush.horizontalGradient(colors = listOf(pinkColor, purpleColor)),
                             shape = RoundedCornerShape(12.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Masuk",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    if (viewModel.isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(
+                            text = "Masuk",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Register link
             Row {
-                Text(
-                    text = "Belum punya akun? ",
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
+                Text(text = "Belum punya akun? ", color = Color.Gray, fontSize = 14.sp)
                 Text(
                     text = "Daftar",
                     color = pinkColor,
