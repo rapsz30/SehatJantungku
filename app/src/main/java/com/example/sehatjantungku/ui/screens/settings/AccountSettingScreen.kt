@@ -42,6 +42,7 @@ fun AccountSettingsScreen(navController: NavController) {
                 .padding(paddingValues)
                 .padding(20.dp)
         ) {
+            // Informasi Keamanan
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -65,20 +66,26 @@ fun AccountSettingsScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Menu Ganti Email (Terkoneksi ke EmailChangeScreen.kt)
             AccountMenuItem(
                 icon = Icons.Default.Email,
                 title = "Ganti Email",
                 subtitle = "user@example.com",
-                onClick = { navController.navigate("email_change") }
+                onClick = {
+                    navController.navigate("settings/email")
+                }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Menu Ganti Password (Terkoneksi ke PasswordChangeScreen.kt)
             AccountMenuItem(
                 icon = Icons.Default.Lock,
                 title = "Ganti Password",
                 subtitle = "Terakhir diubah 30 hari lalu",
-                onClick = { navController.navigate("password_change") }
+                onClick = {
+                    navController.navigate("settings/password")
+                }
             )
         }
     }
@@ -107,7 +114,7 @@ private fun AccountMenuItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color(0xFFFF6FB1),
+                tint = Color(0xFFFF6FB1), // PinkMain
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))

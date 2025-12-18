@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.sehatjantungku.ui.components.BottomNavBar
-import com.example.sehatjantungku.ui.theme.PinkLight
 import com.example.sehatjantungku.ui.theme.PinkMain
 import com.example.sehatjantungku.ui.theme.PurpleLight
 
@@ -86,27 +85,31 @@ fun SettingsScreen(navController: NavController) {
                     icon = Icons.Default.AccountCircle,
                     title = "Akun Tersimpan",
                     subtitle = "Kelola informasi akun Anda",
-                    onClick = { }
+                    onClick = { navController.navigate("settings/account") }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 SettingsMenuItem(
                     icon = Icons.Default.Language,
                     title = "Bahasa",
                     subtitle = "Indonesia",
-                    onClick = { }
+                    onClick = { navController.navigate("settings/language") }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 SettingsMenuItem(
                     icon = Icons.Default.Help,
                     title = "Pusat Bantuan",
                     subtitle = "FAQ dan dukungan",
-                    onClick = { }
+                    onClick = { navController.navigate("settings/help") }
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Logout Button
                 Button(
-                    onClick = { },
+                    onClick = {
+                        navController.navigate("login") {
+                            popUpTo(0) // Menghapus semua history agar tidak bisa back ke home
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),

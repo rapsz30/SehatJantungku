@@ -1,13 +1,14 @@
 package com.example.sehatjantungku.ui.screens.content
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,53 +39,35 @@ fun ContentScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
                 .padding(paddingValues)
         ) {
-            // Header
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "Content",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Artikel & Video Edukasi Kesehatan",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-            }
-
             // Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(16.dp),
                 placeholder = { Text("Cari artikel atau video...") },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = "Search")
-                },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = PinkMain,
-                    unfocusedBorderColor = Color.LightGray
+                    cursorColor = PinkMain
                 )
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Tab Switcher
+            // Tabs
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.White,
                 contentColor = PinkMain,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                        color = PinkMain
+                    )
+                }
             ) {
                 Tab(
                     selected = selectedTab == 0,
@@ -98,21 +81,33 @@ fun ContentScreen(
                 )
             }
 
-            // Content
+            // List Content
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (selectedTab == 0) {
-                    items(4) { index ->
-                        ArticleCard(index)
-                        Spacer(modifier = Modifier.height(16.dp))
+                    // List Artikel (Mengarah ke ArticleDetailScreen)
+                    items(10) { index ->
+                        ArticleCard(
+                            index = index,
+                            onClick = {
+                                // Sesuai Navigation.kt: route = "article/{id}"
+                                navController.navigate("article/${index + 1}")
+                            }
+                        )
                     }
                 } else {
-                    items(4) { index ->
-                        VideoCard(index)
-                        Spacer(modifier = Modifier.height(16.dp))
+                    // List Video (Mengarah ke VideoDetailScreen)
+                    items(5) { index ->
+                        VideoCard(
+                            index = index,
+                            onClick = {
+                                // Sesuai Navigation.kt: route = "video/{id}"
+                                navController.navigate("video/${index + 1}")
+                            }
+                        )
                     }
                 }
             }
@@ -121,9 +116,11 @@ fun ContentScreen(
 }
 
 @Composable
-fun ArticleCard(index: Int) {
+fun ArticleCard(index: Int, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick), // Navigasi saat diklik
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -144,7 +141,7 @@ fun ArticleCard(index: Int) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Deskripsi singkat tentang artikel kesehatan jantung ini",
+                    text = "Deskripsi singkat tentang artikel kesehatan jantung ini agar pengguna tertarik membaca.",
                     fontSize = 12.sp,
                     color = Color.Gray,
                     maxLines = 2
@@ -155,9 +152,11 @@ fun ArticleCard(index: Int) {
 }
 
 @Composable
-fun VideoCard(index: Int) {
+fun VideoCard(index: Int, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick), // Navigasi saat diklik
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -173,6 +172,11 @@ fun VideoCard(index: Int) {
                     text = "Video Edukasi ${index + 1}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
+                )
+                Text(
+                    text = "Durasi: 05:20",
+                    fontSize = 12.sp,
+                    color = Color.Gray
                 )
             }
         }
