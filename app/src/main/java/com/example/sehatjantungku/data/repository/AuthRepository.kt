@@ -9,15 +9,13 @@ class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    // Fungsi untuk Registrasi User Baru
-    suspend fun registerUser(name: String, email: String, phone: String, pass: String): Result<Unit> {
+    // Fungsi untuk Registrasi User Baru dengan Tanggal Lahir
+    suspend fun registerUser(name: String, email: String, phone: String, pass: String, birthDate: String): Result<Unit> {
         return try {
-            // 1. Buat akun di Firebase Auth
             val result = auth.createUserWithEmailAndPassword(email, pass).await()
             val uid = result.user?.uid ?: ""
-
-            // 2. Simpan data profil tambahan ke Firestore
-            val user = User(uid = uid, name = name, email = email, phone = phone)
+            // Menyimpan objek User ke Firestore
+            val user = User(uid = uid, name = name, email = email, phone = phone, birthDate = birthDate)
             db.collection("users").document(uid).set(user).await()
 
             Result.success(Unit)
@@ -26,6 +24,17 @@ class AuthRepository {
         }
     }
 
+    // Fungsi untuk mengambil data profil dari Firestore
+    suspend fun getUserProfile(): Result<User?> {
+        return try {
+            val uid = auth.currentUser?.uid ?: return Result.success(null)
+            val snapshot = db.collection("users").document(uid).get().await()
+            val user = snapshot.toObject(User::class.java)
+            Result.success(user)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     // Fungsi untuk Login
     suspend fun loginUser(email: String, pass: String): Result<Unit> {
         return try {
@@ -35,8 +44,7 @@ class AuthRepository {
             Result.failure(e)
         }
     }
-
-    // Fungsi untuk Lupa Password (Reset Email)
+    // Fungsi untuk Lupa Password
     suspend fun sendPasswordReset(email: String): Result<Unit> {
         return try {
             auth.sendPasswordResetEmail(email).await()
@@ -46,7 +54,7 @@ class AuthRepository {
         }
     }
 
-    // Fungsi Logout (Opsional untuk digunakan di Profile)
+    // Fungsi Logout
     fun logout() {
         auth.signOut()
     }

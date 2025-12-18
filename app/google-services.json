@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "958801331904",
+    "project_id": "sehatjantungku-d8e98",
+    "storage_bucket": "sehatjantungku-d8e98.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:958801331904:android:ab723cf1f1a6db3d230f25",
+        "android_client_info": {
+          "package_name": "com.example.sehatjantungku"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJLNKIdm0OnFpWT7AkJp3ZOm-poQSjlos"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

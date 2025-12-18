@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,16 +19,27 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.sehatjantungku.ui.theme.PinkMain
-import com.example.sehatjantungku.ui.theme.PurpleLight
+import com.example.sehatjantungku.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = viewModel()
+) {
+    val pinkMain = Color(0xFFFF6FB1)
+    val purpleLight = Color(0xFFCC7CF0)
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchUserProfile()
+    }
+
+    val user = viewModel.userData
+
     Scaffold(
         topBar = {
-            // Gunakan TopAppBar transparan agar gradient di konten terlihat
             TopAppBar(
                 title = { Text("Profile", color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
@@ -35,199 +47,75 @@ fun ProfileScreen(navController: NavController) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    // Pastikan konten bar di render di atas insets
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = pinkMain)
             )
         }
-    ) { paddingValues ->
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
-                // Menerapkan padding atas dari Scaffold (termasuk status bar dan TopAppBar)
-                .padding(paddingValues)
+                .padding(innerPadding)
+                .background(Color(0xFFF8F8F8)),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header with gradient
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(280.dp) // Ketinggian asli dari file ProfileScreen.kt
-                ) {
-                    // Gradient Background
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(250.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(PinkMain, PurpleLight)
-                                )
-                            )
-                    )
-
-                    // Profile Picture dan Nama (Diposisikan di tengah Box yang lebih besar)
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.Center)
-                    ) {
-                        Box(
-                            modifier = Modifier.size(100.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.3f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Profile",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(60.dp)
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(PinkMain)
-                                    .align(Alignment.BottomEnd),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Nama User",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                        .background(
+                            brush = Brush.verticalGradient(colors = listOf(pinkMain, purpleLight)),
+                            shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
                         )
+                        .padding(bottom = 40.dp, top = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(60.dp), tint = pinkMain)
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = user?.name ?: "Loading...", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(text = user?.email ?: "", fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
                     }
                 }
             }
 
-            // Personal Information Card
             item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).offset(y = (-20).dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp)
-                    ) {
-                        Text(
-                            text = "Informasi Pribadi",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-
-                        // Panggilan fungsi ProfileInfoItem
-                        ProfileInfoItem(
-                            icon = Icons.Default.Phone,
-                            label = "Nomor Telepon",
-                            value = "+62 812-3456-7890"
-                        )
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(text = "Informasi Pribadi", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        ProfileInfoItem(
-                            icon = Icons.Default.Email,
-                            label = "Email",
-                            value = "user@example.com"
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        ProfileInfoItem(
-                            icon = Icons.Default.Cake,
-                            label = "Tanggal Lahir",
-                            value = "15 Januari 1996"
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        ProfileInfoItem(
-                            icon = Icons.Default.Person,
-                            label = "Usia",
-                            value = "28 tahun"
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        ProfileInfoItem(
-                            icon = Icons.Default.LocationOn,
-                            label = "Alamat",
-                            value = "Jakarta, Indonesia"
-                        )
+                        ProfileItem(Icons.Default.Person, "Nama Lengkap", user?.name ?: "-")
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                        ProfileItem(Icons.Default.Email, "Email", user?.email ?: "-")
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                        ProfileItem(Icons.Default.Phone, "Nomor Telepon", user?.phone ?: "-")
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                        ProfileItem(Icons.Default.Cake, "Tanggal Lahir", user?.birthDate ?: "-")
                     }
                 }
-            }
-
-            // Edit Profile Button
-            item {
-                Button(
-                    onClick = { },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PinkMain
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Edit Profile", fontSize = 16.sp)
-                }
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 }
 
-// DEFINISI FUNGSI INI HARUS ADA DALAM FILE INI
 @Composable
-fun ProfileInfoItem(
-    icon: ImageVector,
-    label: String,
-    value: String
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = PinkMain,
-            modifier = Modifier.size(24.dp)
-        )
+fun ProfileItem(icon: ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = Color(0xFFFF6FB1), modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-            Text(
-                text = value,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
+        Column {
+            Text(label, fontSize = 12.sp, color = Color.Gray)
+            Text(value, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
