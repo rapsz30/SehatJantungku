@@ -1,6 +1,5 @@
 package com.example.sehatjantungku.ui.screens.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,16 +11,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,7 +28,9 @@ import com.example.sehatjantungku.ui.theme.PinkLight
 import com.example.sehatjantungku.ui.theme.PinkMain
 import com.example.sehatjantungku.ui.theme.PurpleLight
 
+// Update: Menambahkan ID untuk navigasi
 data class Article(
+    val id: String,
     val title: String,
     val description: String
 )
@@ -43,20 +40,25 @@ fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel()
 ) {
+    // Update: Daftar artikel dengan ID unik
     val articles = listOf(
         Article(
+            "1",
             "Tips Menjaga Kesehatan Jantung",
             "Pelajari cara-cara sederhana untuk menjaga kesehatan jantung Anda setiap hari"
         ),
         Article(
+            "2",
             "Makanan Sehat untuk Jantung",
             "Daftar makanan yang baik untuk kesehatan jantung dan pembuluh darah"
         ),
         Article(
+            "3",
             "Olahraga Ringan untuk Jantung",
             "Jenis-jenis olahraga yang aman dan bermanfaat untuk kesehatan jantung"
         ),
         Article(
+            "4",
             "Mengenali Gejala Penyakit Jantung",
             "Waspadai tanda-tanda awal penyakit jantung yang sering diabaikan"
         )
@@ -167,30 +169,31 @@ fun HomeScreen(
                 }
             }
 
+            // Feature Menu
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 24.dp), // Padding vertikal ditambah sedikit
-                    horizontalArrangement = Arrangement.SpaceAround // Menggunakan SpaceAround
+                        .padding(horizontal = 16.dp, vertical = 24.dp),
+                    horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     FeatureItem(
                         icon = Icons.Default.Favorite,
                         label = "CVD Risk Predictor",
                         onClick = { navController.navigate("cvd_risk") },
-                        modifier = Modifier.weight(1f) // MEMBAGI RUANG MERATA
+                        modifier = Modifier.weight(1f)
                     )
                     FeatureItem(
                         icon = Icons.Default.Restaurant,
                         label = "Personalized Diet Program",
                         onClick = { navController.navigate("diet_program") },
-                        modifier = Modifier.weight(1f) // MEMBAGI RUANG MERATA
+                        modifier = Modifier.weight(1f)
                     )
                     FeatureItem(
                         icon = Icons.Default.Chat,
                         label = "Chatbot",
                         onClick = { navController.navigate("chatbot") },
-                        modifier = Modifier.weight(1f) // MEMBAGI RUANG MERATA
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -205,9 +208,15 @@ fun HomeScreen(
                 )
             }
 
+            // Update: Menghubungkan klik artikel ke rute detail
             items(articles) { article ->
-                ArticleItem(article = article)
-                Divider(modifier = Modifier.padding(horizontal = 16.dp))
+                ArticleItem(
+                    article = article,
+                    onClick = {
+                        navController.navigate("article/${article.id}")
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
     }
@@ -254,10 +263,14 @@ fun FeatureItem(
 }
 
 @Composable
-fun ArticleItem(article: Article) {
+fun ArticleItem(
+    article: Article,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(16.dp)
     ) {
         Box(

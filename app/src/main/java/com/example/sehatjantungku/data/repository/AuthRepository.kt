@@ -9,7 +9,7 @@ class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    // Fungsi untuk Registrasi User Baru dengan Tanggal Lahir
+    // untuk registrasi User Baru
     suspend fun registerUser(name: String, email: String, phone: String, pass: String, birthDate: String): Result<Unit> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, pass).await()
@@ -24,7 +24,7 @@ class AuthRepository {
         }
     }
 
-    // Fungsi untuk mengambil data profil dari Firestore
+    // untuk mengambil data profil dari Firestore
     suspend fun getUserProfile(): Result<User?> {
         return try {
             val uid = auth.currentUser?.uid ?: return Result.success(null)
@@ -35,7 +35,7 @@ class AuthRepository {
             Result.failure(e)
         }
     }
-    // Fungsi untuk Login
+    // untuk Login
     suspend fun loginUser(email: String, pass: String): Result<Unit> {
         return try {
             auth.signInWithEmailAndPassword(email, pass).await()
@@ -44,7 +44,7 @@ class AuthRepository {
             Result.failure(e)
         }
     }
-    // Fungsi untuk Lupa Password
+    // untuk Lupa Password
     suspend fun sendPasswordReset(email: String): Result<Unit> {
         return try {
             auth.sendPasswordResetEmail(email).await()
@@ -54,7 +54,7 @@ class AuthRepository {
         }
     }
 
-    // Fungsi Logout
+    // Logout
     fun logout() {
         auth.signOut()
     }

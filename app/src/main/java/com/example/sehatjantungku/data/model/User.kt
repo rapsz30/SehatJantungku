@@ -5,5 +5,5 @@ data class User(
     val name: String = "",
     val email: String = "",
     val phone: String = "",
-    val birthDate: String = "" // Field baru untuk tanggal lahir
+    val birthDate: String = ""
 )
