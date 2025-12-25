@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -11,12 +12,16 @@ import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.sehatjantungku.data.model.Article
 import com.example.sehatjantungku.ui.components.BottomNavBar
 import com.example.sehatjantungku.ui.theme.PinkMain
 
@@ -27,6 +32,9 @@ fun ContentScreen(
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
+
+    // Mengambil state list artikel dari ViewModel
+    val articles by viewModel.articles
 
     Scaffold(
         bottomBar = {
@@ -88,23 +96,22 @@ fun ContentScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (selectedTab == 0) {
-                    // List Artikel (Mengarah ke ArticleDetailScreen)
-                    items(10) { index ->
+                    // Menampilkan daftar artikel dari Firebase
+                    items(articles) { article ->
                         ArticleCard(
-                            index = index,
+                            article = article,
                             onClick = {
-                                // Sesuai Navigation.kt: route = "article/{id}"
-                                navController.navigate("article/${index + 1}")
+                                // Navigasi ke detail berdasarkan ID dari Firebase
+                                navController.navigate("article/${article.id}")
                             }
                         )
                     }
                 } else {
-                    // List Video (Mengarah ke VideoDetailScreen)
+                    // List Video (Dapat diimplementasikan serupa dengan Firebase nanti)
                     items(5) { index ->
                         VideoCard(
                             index = index,
                             onClick = {
-                                // Sesuai Navigation.kt: route = "video/{id}"
                                 navController.navigate("video/${index + 1}")
                             }
                         )
@@ -116,32 +123,40 @@ fun ContentScreen(
 }
 
 @Composable
-fun ArticleCard(index: Int, onClick: () -> Unit) {
+fun ArticleCard(article: Article, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick), // Navigasi saat diklik
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier.padding(12.dp)
         ) {
-            Box(
+            // Menggunakan Coil (AsyncImage) untuk memuat gambar dari URL Firebase
+            AsyncImage(
+                model = article.imageUrl,
+                contentDescription = "Thumbnail Artikel",
                 modifier = Modifier
                     .size(120.dp, 90.dp)
-                    .background(Color.LightGray, RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.LightGray),
+                contentScale = ContentScale.Crop
             )
+
             Spacer(modifier = Modifier.width(12.dp))
+
             Column {
                 Text(
-                    text = "Artikel Kesehatan Jantung ${index + 1}",
+                    text = article.title,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    maxLines = 2
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Deskripsi singkat tentang artikel kesehatan jantung ini agar pengguna tertarik membaca.",
+                    text = article.description,
                     fontSize = 12.sp,
                     color = Color.Gray,
                     maxLines = 2
@@ -156,7 +171,7 @@ fun VideoCard(index: Int, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick), // Navigasi saat diklik
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
