@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -33,8 +34,8 @@ fun ContentScreen(
     var selectedTab by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
 
-    // Mengambil state list artikel dari ViewModel
     val articles by viewModel.articles
+    val isLoading by viewModel.isLoading
 
     Scaffold(
         bottomBar = {
@@ -71,7 +72,7 @@ fun ContentScreen(
                 containerColor = Color.White,
                 contentColor = PinkMain,
                 indicator = { tabPositions ->
-                    TabRowDefaults.Indicator(
+                    TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
                         color = PinkMain
                     )
@@ -89,32 +90,38 @@ fun ContentScreen(
                 )
             }
 
-            // List Content
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                if (selectedTab == 0) {
-                    // Menampilkan daftar artikel dari Firebase
-                    items(articles) { article ->
-                        ArticleCard(
-                            article = article,
-                            onClick = {
-                                // Navigasi ke detail berdasarkan ID dari Firebase
-                                navController.navigate("article/${article.id}")
-                            }
-                        )
-                    }
-                } else {
-                    // List Video (Dapat diimplementasikan serupa dengan Firebase nanti)
-                    items(5) { index ->
-                        VideoCard(
-                            index = index,
-                            onClick = {
-                                navController.navigate("video/${index + 1}")
-                            }
-                        )
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = PinkMain)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (selectedTab == 0) {
+                        val filteredArticles = articles.filter {
+                            it.title.contains(searchQuery, ignoreCase = true)
+                        }
+
+                        items(filteredArticles) { article ->
+                            ArticleCard(
+                                article = article,
+                                onClick = {
+                                    navController.navigate("article/${article.id}")
+                                }
+                            )
+                        }
+                    } else {
+                        items(5) { index ->
+                            VideoCard(
+                                index = index,
+                                onClick = {
+                                    navController.navigate("video/${index + 1}")
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -131,22 +138,17 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            // Menggunakan Coil (AsyncImage) untuk memuat gambar dari URL Firebase
+        Row(modifier = Modifier.padding(12.dp)) {
             AsyncImage(
                 model = article.imageUrl,
-                contentDescription = "Thumbnail Artikel",
+                contentDescription = null,
                 modifier = Modifier
                     .size(120.dp, 90.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color.LightGray),
                 contentScale = ContentScale.Crop
             )
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Column {
                 Text(
                     text = article.title,

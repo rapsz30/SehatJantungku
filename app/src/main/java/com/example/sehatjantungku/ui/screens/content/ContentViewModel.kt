@@ -10,14 +10,12 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 class ContentViewModel : ViewModel() {
-    // Referensi ke path "articles" di Firebase Realtime Database
+    // Pastikan path ini sesuai dengan folder tempat Anda import JSON tadi
     private val database = FirebaseDatabase.getInstance().getReference("articles")
 
-    // State untuk menyimpan daftar artikel yang akan diamati oleh UI
     private val _articles = mutableStateOf<List<Article>>(emptyList())
     val articles: State<List<Article>> = _articles
 
-    // State untuk memantau proses loading
     private val _isLoading = mutableStateOf(true)
     val isLoading: State<Boolean> = _isLoading
 
@@ -26,24 +24,22 @@ class ContentViewModel : ViewModel() {
     }
 
     private fun fetchArticlesFromFirebase() {
-        // Mendengarkan perubahan data secara real-time
         database.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val list = mutableListOf<Article>()
-                for (data in snapshot.children) {
-                    // Mengonversi data snapshot menjadi objek Article
-                    val article = data.getValue(Article::class.java)
-                    if (article != null) {
-                        list.add(article)
+                if (snapshot.exists()) {
+                    for (data in snapshot.children) {
+                        val article = data.getValue(Article::class.java)
+                        article?.let { list.add(it) }
                     }
                 }
-                // Update state dengan data terbaru dari Firebase
                 _articles.value = list
+                // PENTING: Menghentikan loading setelah data didapat (meskipun kosong)
                 _isLoading.value = false
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Berhenti loading jika terjadi error
+                // Berhenti loading jika koneksi dibatalkan/error
                 _isLoading.value = false
             }
         })
