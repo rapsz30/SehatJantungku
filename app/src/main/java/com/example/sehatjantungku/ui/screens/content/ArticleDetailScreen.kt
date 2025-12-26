@@ -30,7 +30,12 @@ fun ArticleDetailScreen(
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(articleId) {
-        val db = FirebaseDatabase.getInstance().getReference("articles").child(articleId)
+        // PENTING: Gunakan URL region yang sama di sini
+        val db = FirebaseDatabase
+            .getInstance("https://sehatjantungku-d8e98-default-rtdb.asia-southeast1.firebasedatabase.app")
+            .getReference("articles")
+            .child(articleId)
+
         db.get().addOnSuccessListener { snapshot ->
             article = snapshot.getValue(Article::class.java)
             isLoading = false
@@ -50,7 +55,7 @@ fun ArticleDetailScreen(
                 }
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -58,9 +63,8 @@ fun ArticleDetailScreen(
         } else if (article != null) {
             Column(
                 modifier = Modifier
+                    .padding(padding)
                     .fillMaxSize()
-                    .background(Color.White)
-                    .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
                 AsyncImage(
