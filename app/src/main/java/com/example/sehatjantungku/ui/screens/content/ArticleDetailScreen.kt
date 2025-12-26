@@ -1,6 +1,5 @@
 package com.example.sehatjantungku.ui.screens.content
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,15 +23,14 @@ import com.google.firebase.database.FirebaseDatabase
 @Composable
 fun ArticleDetailScreen(
     navController: NavController,
-    articleId: String
+    articleId: String // Diambil dari rute navigasi
 ) {
     var article by remember { mutableStateOf<Article?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(articleId) {
-        // PENTING: Gunakan URL region yang sama di sini
-        val db = FirebaseDatabase
-            .getInstance("https://sehatjantungku-d8e98-default-rtdb.asia-southeast1.firebasedatabase.app")
+        // Gunakan URL Region Singapore juga di sini agar data bisa ditarik
+        val db = FirebaseDatabase.getInstance("https://sehatjantungku-d8e98-default-rtdb.asia-southeast1.firebasedatabase.app")
             .getReference("articles")
             .child(articleId)
 
@@ -47,7 +45,7 @@ fun ArticleDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detail Artikel") },
+                title = { Text("Detail Artikel", fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -55,7 +53,7 @@ fun ArticleDetailScreen(
                 }
             )
         }
-    ) { padding ->
+    ) { paddingValues ->
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -63,8 +61,8 @@ fun ArticleDetailScreen(
         } else if (article != null) {
             Column(
                 modifier = Modifier
-                    .padding(padding)
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
                 AsyncImage(
@@ -88,16 +86,11 @@ fun ArticleDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = article?.content ?: "",
+                        text = article?.content?.replace("\\n", "\n") ?: "",
                         style = MaterialTheme.typography.bodyLarge,
                         lineHeight = 24.sp
                     )
-                    Spacer(modifier = Modifier.height(40.dp))
                 }
-            }
-        } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Artikel tidak ditemukan")
             }
         }
     }

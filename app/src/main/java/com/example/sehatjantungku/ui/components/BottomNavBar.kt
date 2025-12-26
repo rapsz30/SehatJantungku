@@ -3,7 +3,7 @@ package com.example.sehatjantungku.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Article
-import androidx.compose.material.icons.filled.Settings 
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Settings
@@ -44,10 +44,10 @@ fun BottomNavBar(
             icon = {
                 Icon(
                     imageVector = if (currentRoute == "content") Icons.Filled.Article else Icons.Outlined.Article,
-                    contentDescription = "Content"
+                    contentDescription = "Articles" // Label diubah menjadi Articles
                 )
             },
-            label = { Text("Content") },
+            label = { Text("Articles") }, // Label diubah menjadi Articles
             selected = currentRoute == "content",
             onClick = { navController.navigate("content") },
             colors = NavigationBarItemDefaults.colors(

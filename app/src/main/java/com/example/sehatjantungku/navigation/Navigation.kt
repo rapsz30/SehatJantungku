@@ -20,7 +20,6 @@ import com.example.sehatjantungku.ui.screens.diet.DietResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietStartScreen
 import com.example.sehatjantungku.ui.screens.diet.DietCompletionScreen
 import com.example.sehatjantungku.ui.screens.content.ArticleDetailScreen
-import com.example.sehatjantungku.ui.screens.content.VideoDetailScreen
 import com.example.sehatjantungku.ui.screens.settings.AccountSettingsScreen
 import com.example.sehatjantungku.ui.screens.settings.EmailChangeScreen
 import com.example.sehatjantungku.ui.screens.settings.PasswordChangeScreen
@@ -117,20 +116,12 @@ fun SehatJantungkuNavigation() {
         }
 
         composable(
-            route = "article/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.StringType })
+            route = "article_detail/{articleId}", // Nama argumen harus konsisten
+            arguments = listOf(navArgument("articleId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-            ArticleDetailScreen(navController, id)
+            val articleId = backStackEntry.arguments?.getString("articleId") ?: ""
+            ArticleDetailScreen(navController, articleId)
         }
-        composable(
-            route = "video/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-            VideoDetailScreen(navController, id)
-        }
-
         composable("settings/account") {
             AccountSettingsScreen(navController)
         }

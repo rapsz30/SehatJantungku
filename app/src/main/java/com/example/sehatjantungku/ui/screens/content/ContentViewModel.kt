@@ -11,9 +11,8 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 class ContentViewModel : ViewModel() {
-    // PENTING: Menggunakan URL spesifik region sesuai pesan log error Anda
-    private val database = FirebaseDatabase
-        .getInstance("https://sehatjantungku-d8e98-default-rtdb.asia-southeast1.firebasedatabase.app")
+    // WAJIB: Menggunakan URL region Singapore agar tidak ditolak server
+    private val database = FirebaseDatabase.getInstance("https://sehatjantungku-d8e98-default-rtdb.asia-southeast1.firebasedatabase.app")
         .getReference("articles")
 
     private val _articles = mutableStateOf<List<Article>>(emptyList())
@@ -31,12 +30,10 @@ class ContentViewModel : ViewModel() {
         database.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val list = mutableListOf<Article>()
-
                 if (snapshot.exists()) {
-                    Log.d("FirebaseData", "Koneksi Berhasil! Ditemukan ${snapshot.childrenCount} artikel")
                     for (data in snapshot.children) {
                         try {
-                            // Menggunakan mapping manual agar lebih aman terhadap perbedaan tipe data
+                            // Mapping manual untuk mencegah crash jika tipe data JSON tidak sinkron
                             val article = Article(
                                 id = data.child("id").getValue(String::class.java) ?: "",
                                 title = data.child("title").getValue(String::class.java) ?: "",
@@ -49,19 +46,16 @@ class ContentViewModel : ViewModel() {
                             )
                             list.add(article)
                         } catch (e: Exception) {
-                            Log.e("FirebaseData", "Gagal mapping item ${data.key}: ${e.message}")
+                            Log.e("FirebaseData", "Gagal memproses item ${data.key}: ${e.message}")
                         }
                     }
-                } else {
-                    Log.e("FirebaseData", "Snapshot tidak ditemukan di path 'articles'")
                 }
-
                 _articles.value = list
-                _isLoading.value = false // Berhenti loading setelah data diproses
+                _isLoading.value = false // Berhenti loading di sini
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("FirebaseData", "Koneksi gagal: ${error.message}")
+                Log.e("FirebaseData", "Database Error: ${error.message}")
                 _isLoading.value = false
             }
         })
