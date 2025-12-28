@@ -11,58 +11,36 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.sehatjantungku.data.model.Article
 import com.example.sehatjantungku.ui.components.BottomNavBar
 import com.example.sehatjantungku.ui.theme.PinkLight
 import com.example.sehatjantungku.ui.theme.PinkMain
 import com.example.sehatjantungku.ui.theme.PurpleLight
-
-// Update: Menambahkan ID untuk navigasi
-data class Article(
-    val id: String,
-    val title: String,
-    val description: String
-)
 
 @Composable
 fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel()
 ) {
-    // Update: Daftar artikel dengan ID unik
-    val articles = listOf(
-        Article(
-            "1",
-            "Tips Menjaga Kesehatan Jantung",
-            "Pelajari cara-cara sederhana untuk menjaga kesehatan jantung Anda setiap hari"
-        ),
-        Article(
-            "2",
-            "Makanan Sehat untuk Jantung",
-            "Daftar makanan yang baik untuk kesehatan jantung dan pembuluh darah"
-        ),
-        Article(
-            "3",
-            "Olahraga Ringan untuk Jantung",
-            "Jenis-jenis olahraga yang aman dan bermanfaat untuk kesehatan jantung"
-        ),
-        Article(
-            "4",
-            "Mengenali Gejala Penyakit Jantung",
-            "Waspadai tanda-tanda awal penyakit jantung yang sering diabaikan"
-        )
-    )
+    // Collect Data dari ViewModel
+    val userName by viewModel.userName.collectAsState()
+    val topArticles by viewModel.topArticles.collectAsState()
 
     Scaffold(
         bottomBar = {
@@ -78,7 +56,7 @@ fun HomeScreen(
                 .background(Color.White)
                 .padding(paddingValues)
         ) {
-            // User Welcome Section
+            // --- BAGIAN USER NAME ---
             item {
                 Row(
                     modifier = Modifier
@@ -87,9 +65,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
@@ -98,38 +74,26 @@ fun HomeScreen(
                                 .clickable { navController.navigate("profile") },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White
-                            )
+                            Icon(Icons.Default.Person, "Profile", tint = Color.White)
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
+                            Text("Selamat datang kembali", fontSize = 12.sp, color = Color.Gray)
+                            // TEXT DINAMIS DARI DATABASE
                             Text(
-                                text = "Selamat datang kembali",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
-                            Text(
-                                text = "Nama User",
+                                text = userName,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
-
                     IconButton(onClick = { navController.navigate("notifications") }) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications",
-                            tint = PinkMain
-                        )
+                        Icon(Icons.Default.Notifications, "Notifications", tint = PinkMain)
                     }
                 }
             }
 
-            // Hero Banner
+            // Hero Banner (Tetap sama)
             item {
                 Box(
                     modifier = Modifier
@@ -137,68 +101,31 @@ fun HomeScreen(
                         .padding(horizontal = 16.dp)
                         .height(160.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(PinkMain, PurpleLight)
-                            )
-                        ),
+                        .background(Brush.horizontalGradient(listOf(PinkMain, PurpleLight))),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = "Heart",
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.FavoriteBorder, "Heart", tint = Color.White, modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Welcome to SehatJantungku",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Because every heartbeat matters",
-                            color = Color.White.copy(alpha = 0.9f),
-                            fontSize = 14.sp
-                        )
+                        Text("Welcome to SehatJantungku", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("Because every heartbeat matters", color = Color.White.copy(0.9f), fontSize = 14.sp)
                     }
                 }
             }
 
-            // Feature Menu
+            // Feature Menu (Tetap sama)
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp, 24.dp),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    FeatureItem(
-                        icon = Icons.Default.Favorite,
-                        label = "CVD Risk Predictor",
-                        onClick = { navController.navigate("cvd_risk") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    FeatureItem(
-                        icon = Icons.Default.Restaurant,
-                        label = "Personalized Diet Program",
-                        onClick = { navController.navigate("diet_program") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    FeatureItem(
-                        icon = Icons.Default.Chat,
-                        label = "Chatbot",
-                        onClick = { navController.navigate("chatbot") },
-                        modifier = Modifier.weight(1f)
-                    )
+                    FeatureItem(Icons.Default.Favorite, "CVD Risk Predictor", { navController.navigate("cvd_risk") }, Modifier.weight(1f))
+                    FeatureItem(Icons.Default.Restaurant, "Diet Program", { navController.navigate("diet_program") }, Modifier.weight(1f))
+                    FeatureItem(Icons.Default.Chat, "Chatbot", { navController.navigate("chatbot") }, Modifier.weight(1f))
                 }
             }
 
-            // Top Article Section
+            // Top Article Header
             item {
                 Text(
                     text = "Top Article",
@@ -208,94 +135,75 @@ fun HomeScreen(
                 )
             }
 
-            // Update: Menghubungkan klik artikel ke rute detail
-            items(articles) { article ->
-                ArticleItem(
-                    article = article,
-                    onClick = {
-                        navController.navigate("article/${article.id}")
-                    }
-                )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            // --- BAGIAN LIST ARTIKEL ---
+            items(topArticles) { article ->
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    ArticleItem(
+                        article = article,
+                        onClick = {
+                            navController.navigate("article_detail/${article.id}")
+                        }
+                    )
+                }
             }
         }
     }
 }
 
+// Komponen FeatureItem (Tetap sama)
 @Composable
-fun FeatureItem(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.clickable(onClick = onClick)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(PinkMain, PinkLight)
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
+fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier.clickable(onClick = onClick)) {
+        Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Brush.radialGradient(listOf(PinkMain, PinkLight))), contentAlignment = Alignment.Center) {
+            Icon(icon, label, tint = Color.White, modifier = Modifier.size(28.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            color = Color.Black,
-            textAlign = TextAlign.Center,
-            lineHeight = 14.sp
-        )
+        Text(label, fontSize = 12.sp, color = Color.Black, textAlign = TextAlign.Center, lineHeight = 14.sp)
     }
 }
 
+// --- ITEM ARTIKEL YANG DIPERBARUI (Bentuk Card seperti ContentScreen) ---
 @Composable
-fun ArticleItem(
-    article: Article,
-    onClick: () -> Unit
-) {
-    Row(
+fun ArticleItem(article: Article, onClick: () -> Unit) {
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(120.dp, 90.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.LightGray)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(
-            modifier = Modifier.weight(1f)
+                .padding(12.dp)
+                .height(100.dp)
         ) {
-            Text(
-                text = article.title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2
+            AsyncImage(
+                model = article.imageUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = article.description,
-                fontSize = 12.sp,
-                color = Color.Gray,
-                maxLines = 2
-            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.fillMaxHeight(),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = article.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 2
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = article.description,
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    maxLines = 2
+                )
+            }
         }
     }
 }
