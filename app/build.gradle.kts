@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -18,11 +20,18 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val geminiApiKey = project.findProperty("GEMINI_API_KEY")?.toString() ?: ""
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { localProperties.load(it) }
+        }
 
-        // Suntikkan nilai ke BuildConfig
-        // Pastikan nilai diapit tanda kutip di dalam string ("\"$geminiApiKey\"")
+        // Ambil key dari local.properties, jika tidak ada gunakan string kosong
+        val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+
+        // Inject ke BuildConfig
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        // --- SELESAI BAGIAN PERBAIKAN ---
     }
 
     buildTypes {
@@ -67,7 +76,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("com.google.ai.client.generativeai:generativeai:0.5.0")
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))

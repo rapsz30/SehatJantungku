@@ -78,7 +78,6 @@ fun ProfileScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(text = user?.name ?: "Loading...", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text(text = user?.email ?: "", fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
                     }
                 }
             }
