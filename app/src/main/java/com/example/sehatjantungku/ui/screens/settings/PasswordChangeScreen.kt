@@ -1,31 +1,56 @@
 package com.example.sehatjantungku.ui.screens.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel // Pastikan import ini ada!
 import androidx.navigation.NavController
+import com.example.sehatjantungku.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PasswordChangeScreen(navController: NavController) {
+fun PasswordChangeScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel = viewModel() // Ini sering jadi penyebab crash jika library viewModel compose belum di-load
+) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
     var showCurrentPassword by remember { mutableStateOf(false) }
     var showNewPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val isLoading = authViewModel.isLoading
+    val isSuccess = authViewModel.isSuccess
+    val errorMessage = authViewModel.errorMessage
+
+    // Handle Feedback Sukses/Gagal
+    LaunchedEffect(isSuccess, errorMessage) {
+        if (isSuccess) {
+            Toast.makeText(context, "Password berhasil diubah!", Toast.LENGTH_SHORT).show()
+            authViewModel.clearStatus()
+            navController.popBackStack()
+        }
+        if (errorMessage != null) {
+            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+            authViewModel.clearStatus()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -33,12 +58,10 @@ fun PasswordChangeScreen(navController: NavController) {
                 title = { Text("Ganti Password") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         }
     ) { paddingValues ->
@@ -47,126 +70,75 @@ fun PasswordChangeScreen(navController: NavController) {
                 .fillMaxSize()
                 .background(Color.White)
                 .padding(paddingValues)
-                .padding(20.dp)
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Password Saat Ini",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            // Field Password Lama
             OutlinedTextField(
                 value = currentPassword,
                 onValueChange = { currentPassword = it },
+                label = { Text("Password Lama") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Masukkan password saat ini") },
-                singleLine = true,
                 visualTransformation = if (showCurrentPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { showCurrentPassword = !showCurrentPassword }) {
-                        Icon(
-                            imageVector = if (showCurrentPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (showCurrentPassword) "Hide password" else "Show password"
-                        )
+                        Icon(if (showCurrentPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff, "Toggle")
                     }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFFF6FB1),
-                    focusedLabelColor = Color(0xFFFF6FB1)
-                )
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Password Baru",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            // Field Password Baru
             OutlinedTextField(
                 value = newPassword,
                 onValueChange = { newPassword = it },
+                label = { Text("Password Baru") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Masukkan password baru") },
-                singleLine = true,
                 visualTransformation = if (showNewPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { showNewPassword = !showNewPassword }) {
-                        Icon(
-                            imageVector = if (showNewPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (showNewPassword) "Hide password" else "Show password"
-                        )
+                        Icon(if (showNewPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff, "Toggle")
                     }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFFF6FB1),
-                    focusedLabelColor = Color(0xFFFF6FB1)
-                )
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Konfirmasi Password Baru",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            // Field Konfirmasi
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
+                label = { Text("Konfirmasi Password Baru") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Konfirmasi password baru") },
-                singleLine = true,
                 visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
-                        Icon(
-                            imageVector = if (showConfirmPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (showConfirmPassword) "Hide password" else "Show password"
-                        )
+                        Icon(if (showConfirmPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff, "Toggle")
                     }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFFF6FB1),
-                    focusedLabelColor = Color(0xFFFF6FB1)
-                )
+                }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    // TODO: Implement password change logic
-                    navController.popBackStack()
+                    if (currentPassword.isBlank() || newPassword.isBlank()) {
+                        Toast.makeText(context, "Mohon isi semua data", Toast.LENGTH_SHORT).show()
+                    } else if (newPassword != confirmPassword) {
+                        Toast.makeText(context, "Password baru tidak cocok", Toast.LENGTH_SHORT).show()
+                    } else if (newPassword.length < 6) {
+                        Toast.makeText(context, "Minimal 6 karakter", Toast.LENGTH_SHORT).show()
+                    } else {
+                        authViewModel.changePassword(currentPassword, newPassword)
+                    }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                ),
-                contentPadding = PaddingValues()
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFFFF6FB1),
-                                    Color(0xFFCC7CF0)
-                                )
-                            )
-                        ),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
-                ) {
-                    Text(
-                        text = "Simpan Perubahan",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Simpan Perubahan", fontWeight = FontWeight.Bold)
                 }
             }
         }

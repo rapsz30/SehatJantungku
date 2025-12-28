@@ -6,27 +6,35 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+
+// --- Import Screen Auth ---
 import com.example.sehatjantungku.ui.screens.auth.LoginScreen
 import com.example.sehatjantungku.ui.screens.auth.RegisterScreen
 import com.example.sehatjantungku.ui.screens.auth.ForgotPasswordScreen
+
+// --- Import Screen Utama ---
 import com.example.sehatjantungku.ui.screens.home.HomeScreen
 import com.example.sehatjantungku.ui.screens.content.ContentScreen
 import com.example.sehatjantungku.ui.screens.settings.SettingsScreen
 import com.example.sehatjantungku.ui.screens.profile.ProfileScreen
 import com.example.sehatjantungku.ui.screens.notifications.NotificationsScreen
+
+// --- Import Fitur ---
+import com.example.sehatjantungku.ui.screens.chatbot.ChatbotScreen
 import com.example.sehatjantungku.ui.screens.cvdrisk.CVDRiskScreen
+import com.example.sehatjantungku.ui.screens.cvdrisk.CVDResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietProgramScreen
 import com.example.sehatjantungku.ui.screens.diet.DietResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietStartScreen
 import com.example.sehatjantungku.ui.screens.diet.DietCompletionScreen
 import com.example.sehatjantungku.ui.screens.content.ArticleDetailScreen
-import com.example.sehatjantungku.ui.screens.settings.AccountSettingsScreen
-import com.example.sehatjantungku.ui.screens.settings.EmailChangeScreen
+
+// --- Import Settings Sub-Menu ---
+// Perbaikan: Menggunakan nama Singular (AccountSettingScreen)
+import com.example.sehatjantungku.ui.screens.settings.AccountSettingScreen
 import com.example.sehatjantungku.ui.screens.settings.PasswordChangeScreen
 import com.example.sehatjantungku.ui.screens.settings.LanguageScreen
 import com.example.sehatjantungku.ui.screens.settings.HelpCenterScreen
-import com.example.sehatjantungku.ui.screens.chatbot.ChatbotScreen
-import com.example.sehatjantungku.ui.screens.cvdrisk.CVDResultScreen
 
 @Composable
 fun SehatJantungkuNavigation() {
@@ -34,8 +42,9 @@ fun SehatJantungkuNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "login" // Changed start destination to login
+        startDestination = "login"
     ) {
+        // --- AUTH ROUTES ---
         composable("login") {
             LoginScreen(navController)
         }
@@ -46,6 +55,7 @@ fun SehatJantungkuNavigation() {
             ForgotPasswordScreen(navController)
         }
 
+        // --- MAIN ROUTES ---
         composable("home") {
             HomeScreen(navController)
         }
@@ -62,45 +72,41 @@ fun SehatJantungkuNavigation() {
             NotificationsScreen(navController)
         }
 
+        // --- FITUR: CHATBOT ---
         composable("chatbot") {
             ChatbotScreen(navController)
         }
 
+        // --- FITUR: CVD RISK ---
         composable("cvd_risk") {
             CVDRiskScreen(navController)
         }
         composable(
-            // Nama parameter di URL disesuaikan dengan isi yang dikirim (riskScoresString)
             route = "cvd_risk_result/{riskScoresString}/{heartAge}",
             arguments = listOf(
-                // PERBAIKAN: Mengubah tipe dari IntType menjadi StringType
                 navArgument("riskScoresString") { type = NavType.StringType },
-                // HeartAge tetap IntType
                 navArgument("heartAge") { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            // Mengambil argumen pertama sebagai String
             val riskScoresString = backStackEntry.arguments?.getString("riskScoresString") ?: "0.0,0.0,0.0"
-            // Mengambil argumen kedua sebagai Int
             val heartAge = backStackEntry.arguments?.getInt("heartAge") ?: 0
-
-            // Perhatikan urutan parameter: CVDResultScreen(navController, heartAge, riskScoresString)
-            // CVDResultScreen di file Anda menerima parameter dalam urutan (heartAge: Int, riskScoresString: String)
             CVDResultScreen(navController, heartAge, riskScoresString)
         }
 
+        // --- FITUR: DIET PROGRAM ---
         composable("diet_program") {
             DietProgramScreen(navController)
         }
         composable(
-            route = "diet_result/{bestDiet}/{scores}", // Added missing parameters bestDiet and scores
+            route = "diet_result/{bestDiet}/{scores}",
             arguments = listOf(
                 navArgument("bestDiet") { type = NavType.StringType },
-                navArgument("scores") { type = NavType.StringType } // Pass as comma-separated string
+                navArgument("scores") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val bestDiet = backStackEntry.arguments?.getString("bestDiet") ?: ""
             val scoresString = backStackEntry.arguments?.getString("scores") ?: "0,0,0,0,0"
+            // Konversi string "1,2,3" menjadi List<Int>
             val scores = scoresString.split(",").map { it.toIntOrNull() ?: 0 }
             DietResultScreen(navController, bestDiet, scores)
         }
@@ -115,19 +121,23 @@ fun SehatJantungkuNavigation() {
             DietCompletionScreen(navController)
         }
 
+        // --- ARTIKEL DETAIL ---
         composable(
-            route = "article_detail/{articleId}", // Nama argumen harus konsisten
+            route = "article_detail/{articleId}",
             arguments = listOf(navArgument("articleId") { type = NavType.StringType })
         ) { backStackEntry ->
             val articleId = backStackEntry.arguments?.getString("articleId") ?: ""
             ArticleDetailScreen(navController, articleId)
         }
+
+        // --- SETTINGS SUB-MENUS ---
         composable("settings/account") {
-            AccountSettingsScreen(navController)
+            // Menggunakan nama fungsi yang benar (Singular)
+            AccountSettingScreen(navController)
         }
-        composable("settings/email") {
-            EmailChangeScreen(navController)
-        }
+
+        // Route "settings/email" SUDAH DIHAPUS
+
         composable("settings/password") {
             PasswordChangeScreen(navController)
         }

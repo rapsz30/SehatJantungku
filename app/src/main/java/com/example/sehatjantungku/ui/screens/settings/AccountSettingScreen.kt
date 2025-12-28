@@ -1,29 +1,28 @@
 package com.example.sehatjantungku.ui.screens.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccountSettingsScreen(navController: NavController) {
+fun AccountSettingScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Akun Tersimpan") },
+                title = { Text("Pengaturan Akun") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -38,62 +37,25 @@ fun AccountSettingsScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
                 .padding(paddingValues)
-                .padding(20.dp)
+                .padding(16.dp)
         ) {
-            // Informasi Keamanan
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFFEEF7)
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Keamanan Akun",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Kelola email dan password Anda untuk menjaga keamanan akun",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                }
-            }
+            // Menu Ganti Email SUDAH DIHAPUS
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Menu Ganti Email (Terkoneksi ke EmailChangeScreen.kt)
-            AccountMenuItem(
-                icon = Icons.Default.Email,
-                title = "Ganti Email",
-                subtitle = "user@example.com",
-                onClick = {
-                    navController.navigate("settings/email")
-                }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Menu Ganti Password (Terkoneksi ke PasswordChangeScreen.kt)
-            AccountMenuItem(
+            // Menu Ganti Password
+            AccountSettingItem(
                 icon = Icons.Default.Lock,
                 title = "Ganti Password",
-                subtitle = "Terakhir diubah 30 hari lalu",
-                onClick = {
-                    navController.navigate("settings/password")
-                }
+                subtitle = "Perbarui kata sandi akun Anda",
+                onClick = { navController.navigate("password_change") }
             )
         }
     }
 }
 
 @Composable
-private fun AccountMenuItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+fun AccountSettingItem(
+    icon: ImageVector,
     title: String,
     subtitle: String,
     onClick: () -> Unit
