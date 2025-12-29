@@ -47,15 +47,22 @@ fun LanguageScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
                 .padding(paddingValues)
-                .padding(20.dp)
+                .padding(16.dp)
         ) {
             languages.forEach { language ->
+                // Logika: Hanya Bahasa Indonesia yang tersedia
+                val isAvailable = language == "Bahasa Indonesia"
+
                 LanguageItem(
                     language = language,
                     isSelected = selectedLanguage == language,
-                    onClick = { selectedLanguage = language }
+                    isAvailable = isAvailable,
+                    onClick = {
+                        if (isAvailable) {
+                            selectedLanguage = language
+                        }
+                    }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -67,16 +74,27 @@ fun LanguageScreen(navController: NavController) {
 private fun LanguageItem(
     language: String,
     isSelected: Boolean,
+    isAvailable: Boolean,
     onClick: () -> Unit
 ) {
+    // Warna background: Pink lembut jika dipilih, Abu-abu jika tidak tersedia, Putih jika normal
+    val containerColor = when {
+        isSelected -> Color(0xFFFFEEF7)
+        !isAvailable -> Color(0xFFF5F5F5) // Abu-abu muda
+        else -> Color.White
+    }
+
+    // Warna border atau elevasi visual
+    val contentColor = if (isAvailable) Color.Black else Color.Gray
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(enabled = isAvailable, onClick = onClick), // Disable klik jika tidak tersedia
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFFFFEEF7) else Color.White
+            containerColor = containerColor
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isAvailable) 2.dp else 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -85,12 +103,25 @@ private fun LanguageItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = language,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (isSelected) Color(0xFFFF6FB1) else Color.Black
-            )
+            Column {
+                Text(
+                    text = language,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (isSelected) Color(0xFFFF6FB1) else contentColor
+                )
+
+                // Tambahkan teks "Akan Datang" jika bahasa belum tersedia
+                if (!isAvailable) {
+                    Text(
+                        text = "Akan Datang",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+
             if (isSelected) {
                 Icon(
                     imageVector = Icons.Default.Check,

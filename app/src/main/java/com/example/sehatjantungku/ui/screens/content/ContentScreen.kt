@@ -44,7 +44,7 @@ fun ContentScreen(
         ) {
             // Header Baru: "Article"
             Text(
-                text = "Article",
+                text = "Artikel",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 16.dp)

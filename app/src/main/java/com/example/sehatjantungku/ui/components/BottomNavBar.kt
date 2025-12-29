@@ -25,10 +25,10 @@ fun BottomNavBar(
             icon = {
                 Icon(
                     imageVector = if (currentRoute == "home") Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = "Home"
+                    contentDescription = "Beranda"
                 )
             },
-            label = { Text("Home") },
+            label = { Text("Beranda") },
             selected = currentRoute == "home",
             onClick = { navController.navigate("home") },
             colors = NavigationBarItemDefaults.colors(
@@ -44,10 +44,10 @@ fun BottomNavBar(
             icon = {
                 Icon(
                     imageVector = if (currentRoute == "content") Icons.Filled.Article else Icons.Outlined.Article,
-                    contentDescription = "Articles" // Label diubah menjadi Articles
+                    contentDescription = "Artikel" // Label diubah menjadi Articles
                 )
             },
-            label = { Text("Articles") }, // Label diubah menjadi Articles
+            label = { Text("Artikel") }, // Label diubah menjadi Articles
             selected = currentRoute == "content",
             onClick = { navController.navigate("content") },
             colors = NavigationBarItemDefaults.colors(
@@ -63,10 +63,10 @@ fun BottomNavBar(
             icon = {
                 Icon(
                     imageVector = if (currentRoute == "settings") Icons.Filled.Settings else Icons.Outlined.Settings,
-                    contentDescription = "Settings"
+                    contentDescription = "Pengaturan"
                 )
             },
-            label = { Text("Settings") },
+            label = { Text("Pengaturan") },
             selected = currentRoute == "settings",
             onClick = { navController.navigate("settings") },
             colors = NavigationBarItemDefaults.colors(
