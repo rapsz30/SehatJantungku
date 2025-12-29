@@ -1,41 +1,47 @@
 package com.example.sehatjantungku.ui.screens.cvdrisk
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlin.math.roundToInt
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CVDResultScreen(
     navController: NavController,
     heartAge: Int,
-    riskScoresString: String // Menerima semua risiko dalam bentuk string koma
+    riskScoresString: String, // String: "userRisk,optimalRisk,normalRisk"
+    viewModel: CVDRiskViewModel = viewModel()
 ) {
-    val pinkMain = Color(0xFFFF6FB1)
-    val purpleLight = Color(0xFFCC7CF0)
+    val saveStatus by viewModel.saveStatus.collectAsState()
 
-    val isSaved = remember { mutableStateOf(false) }
-    val showSaveDialog = remember { mutableStateOf(false) }
-
-    // --- Parsing Risk Scores ---
+    // --- Parsing Data ---
     val risks = remember(riskScoresString) {
         riskScoresString.split(",").map { it.toDoubleOrNull() ?: 0.0 }
     }
@@ -43,361 +49,309 @@ fun CVDResultScreen(
     val optimalRiskDecimal = risks.getOrElse(1) { 0.0 }
     val normalRiskDecimal = risks.getOrElse(2) { 0.0 }
 
-    // Konversi risiko pengguna ke persentase untuk kategori/visualisasi (0-100)
-    val userRiskScorePercent = (userRiskDecimal * 100).roundToInt().coerceIn(0, 100)
-    val normalRiskScorePercent = (normalRiskDecimal * 100).roundToInt().coerceIn(0, 100)
-    val optimalRiskScorePercent = (optimalRiskDecimal * 100).roundToInt().coerceIn(0, 100)
+    // Persentase User (0-100)
+    val userRiskPercent = (userRiskDecimal * 100).toFloat()
 
-
-    // Calculate risk category (using percentage)
-    val riskCategory = when {
-        // MENGGUNAKAN userRiskScorePercent
-        userRiskScorePercent < 20 -> "Sangat Rendah"
-        userRiskScorePercent < 40 -> "Rendah"
-        userRiskScorePercent < 60 -> "Sedang"
-        else -> "Tinggi"
+    // Menentukan Kategori
+    val (riskCategory, riskColor, riskIcon) = when {
+        userRiskPercent < 20 -> Triple("Rendah", Color(0xFF4CAF50), Icons.Default.CheckCircle)
+        userRiskPercent < 40 -> Triple("Sedang", Color(0xFFFF9800), Icons.Default.Warning)
+        else -> Triple("Tinggi", Color(0xFFF44336), Icons.Default.Warning)
     }
 
-    val riskColor = when {
-        // MENGGUNAKAN userRiskScorePercent
-        userRiskScorePercent < 20 -> Color(0xFF4CAF50)
-        userRiskScorePercent < 40 -> Color(0xFF8BC34A)
-        userRiskScorePercent < 60 -> Color(0xFFFFC107)
-        else -> Color(0xFFF44336)
-    }
-
-    if (showSaveDialog.value) {
-        AlertDialog(
-            onDismissRequest = { showSaveDialog.value = false },
-            title = { Text("Berhasil Disimpan!") },
-            text = { Text("Hasil CVD Risk berhasil disimpan! Data ini dapat digunakan untuk rekomendasi diet yang lebih personal.") },
-            confirmButton = {
-                TextButton(onClick = { showSaveDialog.value = false }) {
-                    Text("OK", color = pinkMain)
-                }
-            }
-        )
+    // Effect untuk menangani status penyimpanan
+    LaunchedEffect(saveStatus) {
+        if (saveStatus is SaveStatus.Success) {
+            // Optional: Tampilkan Toast atau biarkan Dialog muncul (di bawah)
+        }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Hasil Prediksi", fontWeight = FontWeight.Bold) },
+            CenterAlignedTopAppBar(
+                title = { Text("Hasil Analisis", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, "Kembali")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.White
                 )
             )
         }
     ) { padding ->
+
+        if (saveStatus is SaveStatus.Success) {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetSaveStatus() },
+                icon = { Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50)) },
+                title = { Text("Tersimpan!") },
+                text = { Text("Data kesehatan jantung Anda berhasil disimpan ke database.") },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.resetSaveStatus() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+
+        if (saveStatus is SaveStatus.Error) {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetSaveStatus() },
+                icon = { Icon(Icons.Default.Warning, null, tint = Color.Red) },
+                title = { Text("Gagal Menyimpan") },
+                text = { Text((saveStatus as SaveStatus.Error).message) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.resetSaveStatus() }) {
+                        Text("Tutup")
+                    }
+                }
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF5F5F5))
+                .background(Color(0xFFF9FAFB)) // Light Gray Background
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Heart Age Card
-            Card(
+            // 1. Header Card (Heart Age)
+            ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(4.dp)
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.elevatedCardElevation(6.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Box(
+                    modifier = Modifier
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color(0xFFFF6FB1), Color(0xFFD64486))
+                            )
+                        )
+                        .padding(24.dp)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "Usia Jantung Anda",
-                        fontSize = 16.sp,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "$heartAge tahun",
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = pinkMain
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "Usia Pembuluh Darah",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-
-            // Risk Chart Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
-                ) {
-                    Text(
-                        "Risiko 10 Tahun",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Your Risk Bar
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Risiko Anda", fontSize = 14.sp)
-                            // Menampilkan nilai desimal murni
-                            Text(String.format("%.3f%%", userRiskDecimal * 100), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(30.dp)
-                                .background(Color(0xFFEEEEEE), RoundedCornerShape(8.dp))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    // Menggunakan persentase untuk panjang visual
-                                    .fillMaxWidth(userRiskScorePercent / 100f)
-                                    .height(30.dp)
-                                    .background(
-                                        brush = Brush.horizontalGradient(
-                                            listOf(pinkMain, purpleLight)
-                                        ),
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Normal Bar
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Normal", fontSize = 14.sp)
-                            // Menampilkan nilai desimal murni
-                            Text(String.format("%.3f%%", normalRiskDecimal * 100), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(30.dp)
-                                .background(Color(0xFFEEEEEE), RoundedCornerShape(8.dp))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    // Menggunakan persentase untuk panjang visual
-                                    .fillMaxWidth(normalRiskScorePercent / 100f)
-                                    .height(30.dp)
-                                    .background(
-                                        Color(0xFF8BC34A),
-                                        RoundedCornerShape(8.dp)
-                                    )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Optimal Bar
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Optimal", fontSize = 14.sp)
-                            // Menampilkan nilai desimal murni
-                            Text(String.format("%.3f%%", optimalRiskDecimal * 100), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(30.dp)
-                                .background(Color(0xFFEEEEEE), RoundedCornerShape(8.dp))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    // Menggunakan persentase untuk panjang visual
-                                    .fillMaxWidth(optimalRiskScorePercent / 100f)
-                                    .height(30.dp)
-                                    .background(
-                                        Color(0xFF4CAF50),
-                                        RoundedCornerShape(8.dp)
-                                    )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Risk Category Badge
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(riskColor.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Kategori: $riskCategory",
+                            text = "Usia Jantung Anda",
+                            color = Color.White.copy(alpha = 0.9f),
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = riskColor
+                            fontWeight = FontWeight.Medium
                         )
-                    }
-                }
-            }
-
-            // Recommendations Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
-                ) {
-                    Text(
-                        "Rekomendasi",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    val recommendations = when {
-                        // MENGGUNAKAN userRiskScorePercent
-                        userRiskScorePercent < 20 -> listOf(
-                            "✓ Pertahankan pola hidup sehat Anda",
-                            "✓ Lakukan check-up rutin setiap tahun",
-                            "✓ Tetap aktif dan olahraga teratur",
-                            "✓ Jaga pola makan seimbang"
-                        )
-                        // MENGGUNAKAN userRiskScorePercent
-                        userRiskScorePercent < 40 -> listOf(
-                            "⚠ Tingkatkan aktivitas fisik menjadi 30 menit/hari",
-                            "⚠ Kurangi konsumsi garam dan lemak jenuh",
-                            "⚠ Pantau tekanan darah secara berkala",
-                            "⚠ Konsultasi dengan dokter untuk evaluasi"
-                        )
-                        // MENGGUNAKAN userRiskScorePercent
-                        userRiskScorePercent < 60 -> listOf(
-                            "⚠ Segera konsultasi dengan dokter jantung",
-                            "⚠ Kurangi berat badan jika berlebih",
-                            "⚠ Hindari makanan tinggi kolesterol",
-                            "⚠ Kelola stress dengan baik",
-                            "⚠ Pertimbangkan terapi obat jika diperlukan"
-                        )
-                        else -> listOf(
-                            "🚨 SEGERA konsultasi dengan dokter spesialis jantung",
-                            "🚨 Lakukan pemeriksaan menyeluruh",
-                            "🚨 Ubah gaya hidup secara signifikan",
-                            "🚨 Hentikan kebiasaan merokok jika ada",
-                            "🚨 Ikuti program diet jantung sehat",
-                            "🚨 Pertimbangkan rawat inap jika diperlukan"
-                        )
-                    }
-
-                    recommendations.forEach { recommendation ->
                         Text(
-                            recommendation,
-                            fontSize = 14.sp,
-                            color = Color(0xFF333333),
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            text = "$heartAge Tahun",
+                            color = Color.White,
+                            fontSize = 42.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text("Kategori: $riskCategory", color = Color.White, fontWeight = FontWeight.Bold) },
+                            colors = SuggestionChipDefaults.suggestionChipColors(containerColor = riskColor.copy(alpha = 0.8f)),
+                            border = null
                         )
                     }
                 }
             }
 
+            // 2. Risk Visualizer Section
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+                Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        "💡 Simpan hasil prediksi ini untuk mendapatkan rekomendasi diet yang lebih personal!",
-                        fontSize = 14.sp,
-                        color = Color(0xFF1E40AF),
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        "Risiko 10 Tahun ke Depan",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1F2937)
                     )
-                    Button(
-                        onClick = {
-                            // Save to SharedPreferences or ViewModel
-                            isSaved.value = true
-                            showSaveDialog.value = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF3B82F6)
-                        ),
-                        enabled = !isSaved.value
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = "Save",
-                            modifier = Modifier.size(20.dp)
-                        )
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    RiskBarItem(
+                        label = "Risiko Anda",
+                        valueDecimal = userRiskDecimal,
+                        color = riskColor,
+                        isMain = true
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    RiskBarItem(
+                        label = "Rata-rata Normal",
+                        valueDecimal = normalRiskDecimal,
+                        color = Color(0xFF8BC34A)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    RiskBarItem(
+                        label = "Kondisi Optimal",
+                        valueDecimal = optimalRiskDecimal,
+                        color = Color(0xFF4CAF50)
+                    )
+                }
+            }
+
+            // 3. Recommendation Section
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            if (isSaved.value) "Tersimpan" else "Simpan untuk Program Diet",
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            "Rekomendasi Kesehatan",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1F2937)
                         )
+                    }
+                    Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF3F4F6))
+
+                    val recommendations = getRecommendations(userRiskPercent)
+                    recommendations.forEach { text ->
+                        Row(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text("•", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(end = 8.dp))
+                            Text(text, fontSize = 14.sp, color = Color(0xFF4B5563), lineHeight = 20.sp)
+                        }
                     }
                 }
             }
 
-            // Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // 4. Save & Action Button
+            Button(
+                onClick = {
+                    viewModel.saveToFirebase(heartAge, userRiskDecimal, riskCategory)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                enabled = saveStatus !is SaveStatus.Success && saveStatus !is SaveStatus.Loading
             ) {
-                OutlinedButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = pinkMain
-                    )
-                ) {
-                    Text("Hitung Ulang", modifier = Modifier.padding(vertical = 4.dp))
-                }
-
-                Button(
-                    onClick = { navController.navigate("home") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = pinkMain
-                    )
-                ) {
-                    Text("Kembali ke Beranda", modifier = Modifier.padding(vertical = 4.dp))
+                if (saveStatus is SaveStatus.Loading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else if (saveStatus is SaveStatus.Success) {
+                    Icon(Icons.Default.CheckCircle, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Tersimpan")
+                } else {
+                    Icon(Icons.Default.Save, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Simpan Hasil", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
+
+            OutlinedButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("Hitung Ulang")
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
+    }
+}
+
+@Composable
+fun RiskBarItem(
+    label: String,
+    valueDecimal: Double,
+    color: Color,
+    isMain: Boolean = false
+) {
+    val percentage = (valueDecimal * 100).toFloat()
+    val displayValue = String.format("%.1f%%", percentage)
+    // Cap visual max width at 100% even if higher, minimal visual 1%
+    val visualProgress = (percentage / 100f).coerceIn(0.01f, 1f)
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                label,
+                fontSize = if (isMain) 16.sp else 14.sp,
+                fontWeight = if (isMain) FontWeight.Bold else FontWeight.Medium,
+                color = if (isMain) Color.Black else Color.Gray
+            )
+            Text(
+                displayValue,
+                fontSize = if (isMain) 18.sp else 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(if (isMain) 12.dp else 8.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFF3F4F6))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(visualProgress)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(color)
+            )
+        }
+    }
+}
+
+fun getRecommendations(riskPercent: Float): List<String> {
+    return when {
+        riskPercent < 5 -> listOf(
+            "Pertahankan pola hidup sehat Anda saat ini.",
+            "Lakukan check-up kesehatan rutin setidaknya setahun sekali.",
+            "Tetap aktif berolahraga minimal 150 menit per minggu.",
+            "Jaga pola makan seimbang dengan perbanyak sayur dan buah."
+        )
+        riskPercent < 10 -> listOf(
+            "Tingkatkan aktivitas fisik menjadi rutin 30 menit setiap hari.",
+            "Kurangi konsumsi garam, gula, dan lemak jenuh.",
+            "Pantau tekanan darah Anda secara mandiri atau di klinik.",
+            "Pertimbangkan konsultasi dokter untuk evaluasi faktor risiko."
+        )
+        riskPercent < 20 -> listOf(
+            "Segera konsultasi dengan dokter jantung untuk pemeriksaan lanjut.",
+            "Wajib menurunkan berat badan jika berlebih (obesitas).",
+            "Hindari makanan cepat saji dan tinggi kolesterol sepenuhnya.",
+            "Kelola stres dengan baik (yoga, meditasi, atau hobi).",
+            "Cek profil lipid (kolesterol) darah Anda segera."
+        )
+        else -> listOf(
+            "SANGAT DISARANKAN konsultasi ke dokter spesialis jantung SEGERA.",
+            "Lakukan pemeriksaan EKG dan Treadmill test.",
+            "Ubah gaya hidup secara drastis (berhenti merokok total).",
+            "Ikuti program diet jantung sehat yang ketat.",
+            "Patuhi jadwal minum obat jika sudah diresepkan dokter."
+        )
     }
 }
