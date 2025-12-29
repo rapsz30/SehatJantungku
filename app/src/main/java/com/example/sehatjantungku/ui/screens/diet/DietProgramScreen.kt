@@ -8,15 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.HealthAndSafety
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MonitorHeart
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.SelfImprovement
-import androidx.compose.material.icons.filled.SportsGymnastics
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +17,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,11 +31,38 @@ fun DietProgramScreen(
 ) {
     val pinkMain = Color(0xFFFF6FB1)
     val bgGray = Color(0xFFF9FAFB)
-    val blueAccent = Color(0xFF3B82F6)
 
     // State dari ViewModel
     val state by viewModel.state.collectAsState()
     val cvdAvailable by viewModel.cvdDataAvailable.collectAsState()
+
+    // --- TAMBAHAN UNTUK FIX BUG ---
+    val dietProgress by viewModel.dietProgress.collectAsState()
+    val isLoadingProgress by viewModel.isLoadingProgress.collectAsState()
+    var isCheckingStatus by remember { mutableStateOf(true) }
+
+    // 1. Cek status diet saat layar dibuka
+    LaunchedEffect(Unit) {
+        viewModel.loadUserDietProgress()
+    }
+
+    // 2. Pantau hasil pengecekan (Redirect jika ada diet aktif)
+    LaunchedEffect(dietProgress, isLoadingProgress) {
+        if (!isLoadingProgress) {
+            if (dietProgress != null && !dietProgress!!.isCompleted) {
+                // User punya diet aktif & belum selesai -> Lempar ke Tracker
+                val activeDietId = dietProgress!!.dietId
+                navController.navigate("diet_start/$activeDietId") {
+                    // Hapus halaman form ini dari backstack agar kalau di-back tidak balik ke form
+                    popUpTo("diet_program") { inclusive = true }
+                }
+            } else {
+                // Tidak ada diet aktif, tampilkan form
+                isCheckingStatus = false
+            }
+        }
+    }
+    // --- END TAMBAHAN ---
 
     var showInfo by remember { mutableStateOf(false) }
 
@@ -91,182 +109,197 @@ fun DietProgramScreen(
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(bgGray) // Background abu-abu terang agar Card menonjol
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            // Header Text
-            item {
-                Text(
-                    "Lengkapi data berikut agar kami bisa memilihkan program diet yang paling efektif untuk jantung Anda.",
-                    fontSize = 14.sp,
-                    color = Color.Gray,
-                    lineHeight = 20.sp
-                )
+        // Jika sedang loading pengecekan, tampilkan Loading Spinner saja
+        if (isCheckingStatus || isLoadingProgress) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = pinkMain)
             }
+        } else {
+            // Jika tidak ada diet aktif, TAMPILKAN FORM SOAL
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .background(bgGray)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                // Header Text
+                item {
+                    Text(
+                        "Lengkapi data berikut agar kami bisa memilihkan program diet yang paling efektif untuk jantung Anda.",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        lineHeight = 20.sp
+                    )
+                }
 
-            // Question 1 - Blood Pressure
-            item {
-                DietQuestionCard(
-                    number = "1",
-                    question = "Bagaimana kondisi tekanan darah kamu saat ini?",
-                    icon = Icons.Default.MonitorHeart,
-                    activeColor = pinkMain
-                ) {
-                    val options = listOf("Normal / terkontrol", "Kadang tinggi", "Sering tinggi / Hipertensi", "Tidak tahu")
-                    options.forEach { option ->
-                        SelectionOption(
-                            text = option,
-                            selected = state.bloodPressure == option,
-                            activeColor = pinkMain,
-                            onClick = { viewModel.updateBloodPressure(option) }
-                        )
+                // Question 1 - Blood Pressure
+                item {
+                    DietQuestionCard(
+                        number = "1",
+                        question = "Bagaimana kondisi tekanan darah kamu saat ini?",
+                        icon = Icons.Default.MonitorHeart,
+                        activeColor = pinkMain
+                    ) {
+                        val options = listOf("Normal / terkontrol", "Kadang tinggi", "Sering tinggi / Hipertensi", "Tidak tahu")
+                        options.forEach { option ->
+                            SelectionOption(
+                                text = option,
+                                selected = state.bloodPressure == option,
+                                activeColor = pinkMain,
+                                onClick = { viewModel.updateBloodPressure(option) }
+                            )
+                        }
                     }
                 }
-            }
 
-            // Question 2 - Cholesterol
-            item {
-                DietQuestionCard(
-                    number = "2",
-                    question = "Bagaimana kondisi kolesterol kamu?",
-                    icon = Icons.Default.HealthAndSafety,
-                    activeColor = pinkMain
-                ) {
-                    val options = listOf("Normal", "Agak tinggi", "Tinggi / Hiperkolesterolemia", "Tidak tahu")
-                    options.forEach { option ->
-                        SelectionOption(
-                            text = option,
-                            selected = state.cholesterol == option,
-                            activeColor = pinkMain,
-                            onClick = { viewModel.updateCholesterol(option) }
-                        )
+                // Question 2 - Cholesterol
+                item {
+                    DietQuestionCard(
+                        number = "2",
+                        question = "Bagaimana kondisi kolesterol kamu?",
+                        icon = Icons.Default.HealthAndSafety,
+                        activeColor = pinkMain
+                    ) {
+                        val options = listOf("Normal", "Agak tinggi", "Tinggi / Hiperkolesterolemia", "Tidak tahu")
+                        options.forEach { option ->
+                            SelectionOption(
+                                text = option,
+                                selected = state.cholesterol == option,
+                                activeColor = pinkMain,
+                                onClick = { viewModel.updateCholesterol(option) }
+                            )
+                        }
                     }
                 }
-            }
 
-            // Question 3 - Health Conditions (Multiple)
-            item {
-                DietQuestionCard(
-                    number = "3",
-                    question = "Apakah kamu memiliki kondisi kesehatan berikut? (Boleh pilih lebih dari satu)",
-                    icon = Icons.Default.CheckCircle,
-                    activeColor = pinkMain
-                ) {
-                    val conditions = listOf("Tekanan darah tinggi", "Kolesterol tinggi", "Diabetes", "Asam urat", "Tidak ada")
-                    conditions.forEach { condition ->
-                        val isSelected = state.healthConditions.contains(condition)
-                        SelectionOption(
-                            text = condition,
-                            selected = isSelected,
-                            activeColor = pinkMain,
-                            onClick = { viewModel.toggleHealthCondition(condition) },
-                            isCheckbox = true
-                        )
+                // Question 3 - Health Conditions (Multiple)
+                item {
+                    DietQuestionCard(
+                        number = "3",
+                        question = "Apakah kamu memiliki kondisi kesehatan berikut? (Boleh pilih lebih dari satu)",
+                        icon = Icons.Default.CheckCircle,
+                        activeColor = pinkMain
+                    ) {
+                        val conditions = listOf("Tekanan darah tinggi", "Kolesterol tinggi", "Diabetes", "Asam urat", "Tidak ada")
+                        conditions.forEach { condition ->
+                            val isSelected = state.healthConditions.contains(condition)
+                            SelectionOption(
+                                text = condition,
+                                selected = isSelected,
+                                activeColor = pinkMain,
+                                onClick = { viewModel.toggleHealthCondition(condition) },
+                                isCheckbox = true
+                            )
+                        }
                     }
                 }
-            }
 
-            // Question 4 - Food Preference
-            item {
-                DietQuestionCard(
-                    number = "4",
-                    question = "Makanan seperti apa yang paling nyaman buat kamu jalani?",
-                    icon = Icons.Default.Restaurant,
-                    activeColor = pinkMain
-                ) {
-                    val options = listOf("Nabati dominan", "Hewani dominan", "Seimbang", "Praktis / Instan")
-                    options.forEach { option ->
-                        SelectionOption(
-                            text = option,
-                            selected = state.foodPreference == option,
-                            activeColor = pinkMain,
-                            onClick = { viewModel.updateFoodPreference(option) }
-                        )
+                // Question 4 - Food Preference
+                item {
+                    DietQuestionCard(
+                        number = "4",
+                        question = "Makanan seperti apa yang paling nyaman buat kamu jalani?",
+                        icon = Icons.Default.Restaurant,
+                        activeColor = pinkMain
+                    ) {
+                        val options = listOf("Nabati dominan", "Hewani dominan", "Seimbang", "Praktis / Instan")
+                        options.forEach { option ->
+                            SelectionOption(
+                                text = option,
+                                selected = state.foodPreference == option,
+                                activeColor = pinkMain,
+                                onClick = { viewModel.updateFoodPreference(option) }
+                            )
+                        }
                     }
                 }
-            }
 
-            // Question 5 - Activity Level
-            item {
-                DietQuestionCard(
-                    number = "5",
-                    question = "Seberapa aktif kamu bergerak?",
-                    icon = Icons.Default.SportsGymnastics,
-                    activeColor = pinkMain
-                ) {
-                    val options = listOf("Jarang bergerak (Sedenter)", "Kadang aktif (Ringan)", "Cukup aktif (2-3x/minggu)", "Sangat aktif (Atlet/Rutin)")
-                    options.forEach { option ->
-                        SelectionOption(
-                            text = option,
-                            selected = state.activityLevel == option,
-                            activeColor = pinkMain,
-                            onClick = { viewModel.updateActivityLevel(option) }
-                        )
+                // Question 5 - Activity Level
+                item {
+                    DietQuestionCard(
+                        number = "5",
+                        question = "Seberapa aktif kamu bergerak?",
+                        icon = Icons.Default.SportsGymnastics,
+                        activeColor = pinkMain
+                    ) {
+                        val options = listOf("Jarang bergerak (Sedenter)", "Kadang aktif (Ringan)", "Cukup aktif (2-3x/minggu)", "Sangat aktif (Atlet/Rutin)")
+                        options.forEach { option ->
+                            SelectionOption(
+                                text = option,
+                                selected = state.activityLevel == option,
+                                activeColor = pinkMain,
+                                onClick = { viewModel.updateActivityLevel(option) }
+                            )
+                        }
                     }
                 }
-            }
 
-            // Question 6 - Commitment
-            item {
-                DietQuestionCard(
-                    number = "6",
-                    question = "Seberapa yakin kamu bisa konsisten?",
-                    icon = Icons.Default.SelfImprovement,
-                    activeColor = pinkMain
-                ) {
-                    val options = listOf("Sulit", "Lumayan", "Cukup yakin", "Sangat yakin")
-                    options.forEach { option ->
-                        SelectionOption(
-                            text = option,
-                            selected = state.commitment == option,
-                            activeColor = pinkMain,
-                            onClick = { viewModel.updateCommitment(option) }
-                        )
+                // Question 6 - Commitment
+                item {
+                    DietQuestionCard(
+                        number = "6",
+                        question = "Seberapa yakin kamu bisa konsisten?",
+                        icon = Icons.Default.SelfImprovement,
+                        activeColor = pinkMain
+                    ) {
+                        val options = listOf("Sulit", "Lumayan", "Cukup yakin", "Sangat yakin")
+                        options.forEach { option ->
+                            SelectionOption(
+                                text = option,
+                                selected = state.commitment == option,
+                                activeColor = pinkMain,
+                                onClick = { viewModel.updateCommitment(option) }
+                            )
+                        }
                     }
                 }
-            }
 
-            // Question 7 - CVD Risk Consideration (Integrasi Firestore)
-            item {
-                DietCVDSelectionCard(
-                    cvdAvailable = cvdAvailable,
-                    useCVDData = state.useCvdScore,
-                    riskCategory = state.cvdRiskCategory,
-                    onSelectionChange = { viewModel.updateUseCVDData(it) }
-                )
-            }
-
-            // Submit Button
-            item {
-                Button(
-                    onClick = {
-                        val result = viewModel.calculateBestDiet()
-                        // Navigasi ke Result Screen membawa ID Diet terbaik
-                        navController.navigate("diet_result/${result.bestDietId}")
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = pinkMain),
-                    elevation = ButtonDefaults.buttonElevation(4.dp),
-                    enabled = state.bloodPressure.isNotEmpty() && state.cholesterol.isNotEmpty() &&
-                            state.foodPreference.isNotEmpty()
-                ) {
-                    Text("Analisis & Dapatkan Rekomendasi", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                // Question 7 - CVD Risk Consideration (Integrasi Firestore)
+                item {
+                    DietCVDSelectionCard(
+                        cvdAvailable = cvdAvailable,
+                        useCVDData = state.useCvdScore,
+                        riskCategory = state.cvdRiskCategory,
+                        onSelectionChange = { viewModel.updateUseCVDData(it) }
+                    )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+
+                // Submit Button
+                item {
+                    Button(
+                        onClick = {
+                            val result = viewModel.calculateBestDiet()
+                            // Navigasi ke Result Screen membawa ID Diet terbaik
+                            navController.navigate("diet_result/${result.bestDietId}")
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = pinkMain),
+                        elevation = ButtonDefaults.buttonElevation(4.dp),
+                        enabled = state.bloodPressure.isNotEmpty() && state.cholesterol.isNotEmpty() &&
+                                state.foodPreference.isNotEmpty()
+                    ) {
+                        Text("Analisis & Dapatkan Rekomendasi", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
             }
         }
     }
 }
 
-// --- Komponen UI Helper (Agar Kode Bersih & Rapi) ---
+// --- Helper Components TETAP SAMA seperti sebelumnya ---
+// (DietQuestionCard, SelectionOption, DietCVDSelectionCard tidak perlu diubah,
+// pastikan saja tercopy di bawah sini seperti file aslinya)
 
 @Composable
 fun DietQuestionCard(
@@ -332,7 +365,7 @@ fun SelectionOption(
         ) {
             if (isCheckbox) {
                 Icon(
-                    if (selected) Icons.Default.CheckCircle else Icons.Default.CheckCircle, // Bisa diganti icon unchecked jika mau
+                    if (selected) Icons.Default.CheckCircle else Icons.Default.CheckCircle,
                     contentDescription = null,
                     tint = if (selected) activeColor else Color.LightGray,
                     modifier = Modifier.size(20.dp)
@@ -380,7 +413,6 @@ fun DietCVDSelectionCard(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Info Bar jika data ada
             if (cvdAvailable) {
                 Row(
                     modifier = Modifier
@@ -400,7 +432,6 @@ fun DietCVDSelectionCard(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             } else {
-                // Info Bar jika data TIDAK ada
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -423,7 +454,6 @@ fun DietCVDSelectionCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Option: Yes (Gunakan Data)
                 Surface(
                     modifier = Modifier
                         .weight(1f)
@@ -437,14 +467,12 @@ fun DietCVDSelectionCard(
                     Column(
                         modifier = Modifier
                             .padding(16.dp)
-                            // Jika disable, kurangi opacity
                             .alpha(if (cvdAvailable) 1f else 0.4f),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         if (useCVDData && cvdAvailable) {
                             Icon(Icons.Default.CheckCircle, null, tint = blueMain, modifier = Modifier.size(24.dp))
                         } else {
-                            // Icon placeholder biar tinggi kartu sama
                             Spacer(modifier = Modifier.size(24.dp))
                         }
 
@@ -458,7 +486,6 @@ fun DietCVDSelectionCard(
                     }
                 }
 
-                // Option: No (Saran Umum)
                 Surface(
                     modifier = Modifier
                         .weight(1f)

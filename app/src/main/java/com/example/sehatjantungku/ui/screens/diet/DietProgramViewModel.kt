@@ -332,4 +332,25 @@ class DietProgramViewModel : ViewModel() {
             response.text ?: "Diet ini dipilih karena profil nutrisinya paling sesuai untuk kondisi Anda."
         } catch (e: Exception) { "Diet ini memiliki skor kecocokan tertinggi berdasarkan data kesehatan Anda." }
     }
+
+    // --- FUNGSI BATALKAN DIET ---
+    fun stopCurrentDiet(onSuccess: () -> Unit) {
+        val userId = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            try {
+                // Menghapus dokumen active_diet dari Firestore
+                db.collection("users").document(userId)
+                    .collection("diet_program").document("active_diet")
+                    .delete()
+                    .await()
+
+                // Reset state lokal
+                _dietProgress.value = null
+                onSuccess()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 }

@@ -44,6 +44,10 @@ fun DietStartScreen(
     var taskStatus by remember { mutableStateOf(mutableMapOf<String, Boolean>()) }
     var showVictoryDialog by remember { mutableStateOf(false) }
 
+    // State untuk Menu & Dialog Pembatalan
+    var showMenu by remember { mutableStateOf(false) }
+    var showStopDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.loadUserDietProgress()
     }
@@ -70,6 +74,37 @@ fun DietStartScreen(
         taskStatus = taskStatus.toMutableMap().apply { put(key, !current) }
     }
 
+    // --- DIALOG KONFIRMASI PEMBATALAN DIET ---
+    if (showStopDialog) {
+        AlertDialog(
+            onDismissRequest = { showStopDialog = false },
+            icon = { Icon(Icons.Default.DeleteForever, null, tint = Color.Red) },
+            title = { Text("Batalkan Program Diet?") },
+            text = { Text("Seluruh progres Anda akan dihapus dan tidak bisa dikembalikan. Anda harus mengisi ulang kuesioner jika ingin memulai lagi.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.stopCurrentDiet {
+                            showStopDialog = false
+                            Toast.makeText(context, "Program diet dibatalkan", Toast.LENGTH_SHORT).show()
+                            // Kembali ke halaman Home atau Form awal
+                            navController.navigate("diet_program") {
+                                popUpTo("home") { inclusive = false }
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Ya, Hentikan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStopDialog = false }) { Text("Batal") }
+            },
+            containerColor = Color.White
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -83,6 +118,28 @@ fun DietStartScreen(
                     IconButton(onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true } } }) {
                         Icon(Icons.Default.ArrowBack, "Kembali")
                     }
+                },
+                // --- UPDATE: MENU POJOK KANAN ATAS ---
+                actions = {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, "Opsi Lain")
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Batalkan Program Diet", color = Color.Red) },
+                            onClick = {
+                                showMenu = false
+                                showStopDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Cancel, null, tint = Color.Red)
+                            }
+                        )
+                    }
                 }
             )
         }
@@ -95,7 +152,6 @@ fun DietStartScreen(
             val plan = dietPlan!!
             val currentDay = dietProgress?.currentDay ?: 1
 
-            // waktuDiet sudah Int, bisa langsung dipakai
             val totalDays = plan.waktuDiet
             val progress = currentDay.toFloat() / totalDays.toFloat()
             val animatedProgress by animateFloatAsState(targetValue = progress, label = "progress")
@@ -132,14 +188,30 @@ fun DietStartScreen(
                     }
                 }
 
-                // Aturan
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4F4)), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, pinkMain.copy(alpha = 0.2f))) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                // --- UPDATE: Aturan Penting (FULL TEXT) ---
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4F4)),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, pinkMain.copy(alpha = 0.2f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .fillMaxWidth(), // Pastikan row memenuhi lebar
+                        verticalAlignment = Alignment.Top // Icon di atas agar rapi jika teks panjang
+                    ) {
                         Icon(Icons.Default.Warning, null, tint = Color(0xFFBE123C), modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text("Aturan Penting", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF881337))
-                            Text(plan.aturanDiet.take(80) + "...", fontSize = 12.sp, color = Color(0xFF4B5563), lineHeight = 16.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            // PERBAIKAN: Menghapus .take(80) agar teks tampil semua
+                            Text(
+                                text = plan.aturanDiet,
+                                fontSize = 13.sp,
+                                color = Color(0xFF4B5563),
+                                lineHeight = 18.sp // Line height agar nyaman dibaca
+                            )
                         }
                     }
                 }
@@ -207,6 +279,7 @@ fun DietStartScreen(
     }
 }
 
+// Komponen Helper tetap sama
 @Composable
 fun DetailedTaskCard(title: String, description: String, time: String, menu: String, tips: String, isCompleted: Boolean, onCheckChange: () -> Unit, icon: ImageVector, color: Color) {
     Card(
