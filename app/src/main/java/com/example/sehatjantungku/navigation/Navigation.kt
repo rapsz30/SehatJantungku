@@ -1,6 +1,7 @@
 package com.example.sehatjantungku.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel // [PENTING] Tambahkan import ini
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,10 +24,13 @@ import com.example.sehatjantungku.ui.screens.notifications.NotificationsScreen
 import com.example.sehatjantungku.ui.screens.chatbot.ChatbotScreen
 import com.example.sehatjantungku.ui.screens.cvdrisk.CVDRiskScreen
 import com.example.sehatjantungku.ui.screens.cvdrisk.CVDResultScreen
+
+// --- Import Fitur Diet & ViewModel ---
 import com.example.sehatjantungku.ui.screens.diet.DietProgramScreen
 import com.example.sehatjantungku.ui.screens.diet.DietResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietStartScreen
 import com.example.sehatjantungku.ui.screens.diet.DietCompletionScreen
+import com.example.sehatjantungku.ui.screens.diet.DietProgramViewModel // [PENTING] Import ViewModel
 import com.example.sehatjantungku.ui.screens.content.ArticleDetailScreen
 
 // --- Import Settings Sub-Menu ---
@@ -37,51 +41,35 @@ import com.example.sehatjantungku.ui.screens.settings.HelpCenterScreen
 
 @Composable
 fun SehatJantungkuNavigation(
-    startDestination: String = "login" // Parameter Default
+    startDestination: String = "login"
 ) {
     val navController = rememberNavController()
 
+    // [PENTING] Inisialisasi ViewModel di sini agar bisa dishare
+    // Ini memastikan Data Input di Form tidak hilang saat pindah ke Result
+    val dietViewModel: DietProgramViewModel = viewModel()
+
     NavHost(
         navController = navController,
-        startDestination = startDestination // Gunakan parameter di sini
+        startDestination = startDestination
     ) {
         // --- AUTH ROUTES ---
-        composable("login") {
-            LoginScreen(navController)
-        }
-        composable("register") {
-            RegisterScreen(navController)
-        }
-        composable("forgot_password") {
-            ForgotPasswordScreen(navController)
-        }
+        composable("login") { LoginScreen(navController) }
+        composable("register") { RegisterScreen(navController) }
+        composable("forgot_password") { ForgotPasswordScreen(navController) }
 
         // --- MAIN ROUTES ---
-        composable("home") {
-            HomeScreen(navController)
-        }
-        composable("content") {
-            ContentScreen(navController)
-        }
-        composable("settings") {
-            SettingsScreen(navController)
-        }
-        composable("profile") {
-            ProfileScreen(navController)
-        }
-        composable("notifications") {
-            NotificationsScreen(navController)
-        }
+        composable("home") { HomeScreen(navController) }
+        composable("content") { ContentScreen(navController) }
+        composable("settings") { SettingsScreen(navController) }
+        composable("profile") { ProfileScreen(navController) }
+        composable("notifications") { NotificationsScreen(navController) }
 
         // --- FITUR: CHATBOT ---
-        composable("chatbot") {
-            ChatbotScreen(navController)
-        }
+        composable("chatbot") { ChatbotScreen(navController) }
 
         // --- FITUR: CVD RISK ---
-        composable("cvd_risk") {
-            CVDRiskScreen(navController)
-        }
+        composable("cvd_risk") { CVDRiskScreen(navController) }
         composable(
             route = "cvd_risk_result/{riskScoresString}/{heartAge}",
             arguments = listOf(
@@ -94,22 +82,26 @@ fun SehatJantungkuNavigation(
             CVDResultScreen(navController, heartAge, riskScoresString)
         }
 
-        // --- FITUR: DIET PROGRAM ---
+        // --- FITUR: DIET PROGRAM (UPDATED) ---
         composable("diet_program") {
-            DietProgramScreen(navController)
+            // Kita kirim dietViewModel yang sudah dibuat di atas
+            DietProgramScreen(navController, dietViewModel)
         }
+
+        // Route Result yang Baru (Sesuai kode sebelumnya)
         composable(
-            route = "diet_result/{bestDiet}/{scores}",
+            route = "diet_result/{dietId}",
             arguments = listOf(
-                navArgument("bestDiet") { type = NavType.StringType },
-                navArgument("scores") { type = NavType.StringType }
+                navArgument("dietId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val bestDiet = backStackEntry.arguments?.getString("bestDiet") ?: ""
-            val scoresString = backStackEntry.arguments?.getString("scores") ?: "0,0,0,0,0"
-            val scores = scoresString.split(",").map { it.toIntOrNull() ?: 0 }
-            DietResultScreen(navController, bestDiet, scores)
+            val dietId = backStackEntry.arguments?.getString("dietId") ?: "1"
+
+            // Di sini kita kirim ViewModel yang SAMA, sehingga data input user masih ada
+            // untuk dibaca oleh Gemini AI
+            DietResultScreen(navController, dietId, dietViewModel)
         }
+
         composable(
             route = "diet_start/{dietType}",
             arguments = listOf(navArgument("dietType") { type = NavType.StringType })
@@ -131,17 +123,9 @@ fun SehatJantungkuNavigation(
         }
 
         // --- SETTINGS SUB-MENUS ---
-        composable("settings/account") {
-            AccountSettingScreen(navController)
-        }
-        composable("settings/password") {
-            PasswordChangeScreen(navController)
-        }
-        composable("settings/language") {
-            LanguageScreen(navController)
-        }
-        composable("settings/help") {
-            HelpCenterScreen(navController)
-        }
+        composable("settings/account") { AccountSettingScreen(navController) }
+        composable("settings/password") { PasswordChangeScreen(navController) }
+        composable("settings/language") { LanguageScreen(navController) }
+        composable("settings/help") { HelpCenterScreen(navController) }
     }
 }
