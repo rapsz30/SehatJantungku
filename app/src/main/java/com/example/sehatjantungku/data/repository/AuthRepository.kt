@@ -66,7 +66,6 @@ class AuthRepository {
             // Re-authenticate wajib untuk ganti password
             val credential = EmailAuthProvider.getCredential(email, currentPass)
             user.reauthenticate(credential).await()
-
             user.updatePassword(newPass).await()
 
             Result.success(Unit)

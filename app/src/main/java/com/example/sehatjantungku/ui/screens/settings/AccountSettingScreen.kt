@@ -40,14 +40,12 @@ fun AccountSettingScreen(navController: NavController) {
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Menu Ganti Email SUDAH DIHAPUS
-
             // Menu Ganti Password
             AccountSettingItem(
                 icon = Icons.Default.Lock,
                 title = "Ganti Password",
                 subtitle = "Perbarui kata sandi akun Anda",
-                onClick = { navController.navigate("password_change") }
+                onClick = { navController.navigate("settings/password") }
             )
         }
     }

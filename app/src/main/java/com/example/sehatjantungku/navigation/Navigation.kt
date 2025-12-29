@@ -30,19 +30,20 @@ import com.example.sehatjantungku.ui.screens.diet.DietCompletionScreen
 import com.example.sehatjantungku.ui.screens.content.ArticleDetailScreen
 
 // --- Import Settings Sub-Menu ---
-// Perbaikan: Menggunakan nama Singular (AccountSettingScreen)
 import com.example.sehatjantungku.ui.screens.settings.AccountSettingScreen
 import com.example.sehatjantungku.ui.screens.settings.PasswordChangeScreen
 import com.example.sehatjantungku.ui.screens.settings.LanguageScreen
 import com.example.sehatjantungku.ui.screens.settings.HelpCenterScreen
 
 @Composable
-fun SehatJantungkuNavigation() {
+fun SehatJantungkuNavigation(
+    startDestination: String = "login" // Parameter Default
+) {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = startDestination // Gunakan parameter di sini
     ) {
         // --- AUTH ROUTES ---
         composable("login") {
@@ -106,7 +107,6 @@ fun SehatJantungkuNavigation() {
         ) { backStackEntry ->
             val bestDiet = backStackEntry.arguments?.getString("bestDiet") ?: ""
             val scoresString = backStackEntry.arguments?.getString("scores") ?: "0,0,0,0,0"
-            // Konversi string "1,2,3" menjadi List<Int>
             val scores = scoresString.split(",").map { it.toIntOrNull() ?: 0 }
             DietResultScreen(navController, bestDiet, scores)
         }
@@ -132,12 +132,8 @@ fun SehatJantungkuNavigation() {
 
         // --- SETTINGS SUB-MENUS ---
         composable("settings/account") {
-            // Menggunakan nama fungsi yang benar (Singular)
             AccountSettingScreen(navController)
         }
-
-        // Route "settings/email" SUDAH DIHAPUS
-
         composable("settings/password") {
             PasswordChangeScreen(navController)
         }

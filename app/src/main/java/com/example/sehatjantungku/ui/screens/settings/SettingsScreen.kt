@@ -1,129 +1,132 @@
 package com.example.sehatjantungku.ui.screens.settings
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.sehatjantungku.ui.components.BottomNavBar
-import com.example.sehatjantungku.ui.theme.PinkMain
-import com.example.sehatjantungku.ui.theme.PurpleLight
+import com.example.sehatjantungku.ui.components.BottomNavBar // Import BottomNavBar
+import com.google.firebase.auth.FirebaseAuth
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController) {
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Pengaturan",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                // HAPUS navigationIcon (Arrow Back) karena ini menu utama
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White
+                )
+            )
+        },
+        // TAMBAHKAN BottomNavBar DI SINI
         bottomBar = {
             BottomNavBar(
                 navController = navController,
-                currentRoute = "settings"
+                currentRoute = "settings" // Set aktif di tab Settings
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
                 .padding(paddingValues)
+                .padding(16.dp)
         ) {
-            // Hero Section
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(PinkMain, PurpleLight)
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Nama User",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            // Bagian Header
+            item {
+                Text(
+                    text = "Umum",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
             }
 
-            // Settings Menu
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                SettingsMenuItem(
-                    icon = Icons.Default.AccountCircle,
-                    title = "Akun Tersimpan",
-                    subtitle = "Kelola informasi akun Anda",
+            // Menu: Akun
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Person,
+                    title = "Akun",
                     onClick = { navController.navigate("settings/account") }
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                SettingsMenuItem(
+            }
+
+            // Menu: Bahasa
+            item {
+                SettingsItem(
                     icon = Icons.Default.Language,
                     title = "Bahasa",
-                    subtitle = "Indonesia",
                     onClick = { navController.navigate("settings/language") }
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                SettingsMenuItem(
+            }
+
+            // Menu: Bantuan
+            item {
+                SettingsItem(
                     icon = Icons.Default.Help,
                     title = "Pusat Bantuan",
-                    subtitle = "FAQ dan dukungan",
                     onClick = { navController.navigate("settings/help") }
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-                // Logout Button
+            // Spacer
+            item {
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            // --- TOMBOL LOGOUT ---
+            item {
                 Button(
                     onClick = {
+                        // 1. Logout Firebase
+                        FirebaseAuth.getInstance().signOut()
+
+                        // 2. Kembali ke Login & Hapus History
                         navController.navigate("login") {
-                            popUpTo(0) // Menghapus semua history agar tidak bisa back ke home
+                            popUpTo(0) { inclusive = true }
                         }
                     },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFE5E5),
+                        contentColor = Color.Red
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                        .height(56.dp),
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Logout,
-                        contentDescription = "Logout"
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Logout", fontSize = 16.sp)
+                    Text(
+                        text = "Keluar",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
                 }
             }
         }
@@ -131,46 +134,40 @@ fun SettingsScreen(navController: NavController) {
 }
 
 @Composable
-fun SettingsMenuItem(
+fun SettingsItem(
     icon: ImageVector,
     title: String,
-    subtitle: String,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = title,
-                tint = PinkMain,
-                modifier = Modifier.size(32.dp)
+                contentDescription = null,
+                tint = Color(0xFFFF6FB1),
+                modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = subtitle,
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-            }
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge
+            )
             Icon(
                 imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Arrow",
+                contentDescription = null,
                 tint = Color.Gray
             )
         }
