@@ -1,7 +1,7 @@
 package com.example.sehatjantungku.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel // [PENTING] Tambahkan import ini
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -30,7 +30,7 @@ import com.example.sehatjantungku.ui.screens.diet.DietProgramScreen
 import com.example.sehatjantungku.ui.screens.diet.DietResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietStartScreen
 import com.example.sehatjantungku.ui.screens.diet.DietCompletionScreen
-import com.example.sehatjantungku.ui.screens.diet.DietProgramViewModel // [PENTING] Import ViewModel
+import com.example.sehatjantungku.ui.screens.diet.DietProgramViewModel // Import ViewModel Diet
 import com.example.sehatjantungku.ui.screens.content.ArticleDetailScreen
 
 // --- Import Settings Sub-Menu ---
@@ -45,8 +45,7 @@ fun SehatJantungkuNavigation(
 ) {
     val navController = rememberNavController()
 
-    // [PENTING] Inisialisasi ViewModel di sini agar bisa dishare
-    // Ini memastikan Data Input di Form tidak hilang saat pindah ke Result
+    // [PENTING] Inisialisasi ViewModel di level ini agar bisa dishare antar screen
     val dietViewModel: DietProgramViewModel = viewModel()
 
     NavHost(
@@ -82,13 +81,15 @@ fun SehatJantungkuNavigation(
             CVDResultScreen(navController, heartAge, riskScoresString)
         }
 
-        // --- FITUR: DIET PROGRAM (UPDATED) ---
+        // --- FITUR: DIET PROGRAM ---
+
+        // 1. Screen Form Personalisasi
         composable("diet_program") {
-            // Kita kirim dietViewModel yang sudah dibuat di atas
+            // Kita kirim dietViewModel yang sama
             DietProgramScreen(navController, dietViewModel)
         }
 
-        // Route Result yang Baru (Sesuai kode sebelumnya)
+        // 2. Screen Hasil Rekomendasi
         composable(
             route = "diet_result/{dietId}",
             arguments = listOf(
@@ -96,19 +97,21 @@ fun SehatJantungkuNavigation(
             )
         ) { backStackEntry ->
             val dietId = backStackEntry.arguments?.getString("dietId") ?: "1"
-
-            // Di sini kita kirim ViewModel yang SAMA, sehingga data input user masih ada
-            // untuk dibaca oleh Gemini AI
+            // Kirim viewModel agar bisa akses data input user untuk Gemini
             DietResultScreen(navController, dietId, dietViewModel)
         }
 
+        // 3. Screen Mulai Diet (Tracker) - [YANG DIPERBAIKI]
         composable(
-            route = "diet_start/{dietType}",
-            arguments = listOf(navArgument("dietType") { type = NavType.StringType })
+            route = "diet_start/{dietId}",
+            arguments = listOf(navArgument("dietId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val dietType = backStackEntry.arguments?.getString("dietType") ?: "Plant-Based"
-            DietStartScreen(navController, dietType)
+            val dietId = backStackEntry.arguments?.getString("dietId") ?: "1"
+
+            // PERBAIKAN: Tambahkan parameter dietViewModel di sini
+            DietStartScreen(navController, dietId, dietViewModel)
         }
+
         composable("diet_completion") {
             DietCompletionScreen(navController)
         }

@@ -1,6 +1,8 @@
 package com.example.sehatjantungku.ui.screens.diet
 
-import androidx.compose.animation.AnimatedVisibility
+import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,159 +17,57 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
-
-data class DailyTask(
-    val id: Int,
-    val emoji: String,
-    val title: String,
-    val description: String,
-    val time: String,
-    val points: Int,
-    val shortTip: String,
-    val examples: List<String>,
-    var isCompleted: Boolean = false
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DietStartScreen(
     navController: NavController,
-    dietType: String
+    dietId: String,
+    viewModel: DietProgramViewModel
 ) {
-    val pinkMain = Color(0xFFFF6FB1)
-    val pinkLight = Color(0xFFFF8CCF)
-    val purpleLight = Color(0xFFCC7CF0)
+    val context = LocalContext.current
 
-    var currentDay by remember { mutableStateOf(20) } // Set to day 20 for testing
-    val totalDays = 21
-    var currentStreak by remember { mutableStateOf(19) }
-    var totalPoints by remember { mutableStateOf(950) }
+    val dietProgress by viewModel.dietProgress.collectAsState()
+    val isLoadingProgress by viewModel.isLoadingProgress.collectAsState()
 
-    var isRulesOpen by remember { mutableStateOf(false) }
-    var showAchievementsModal by remember { mutableStateOf(false) }
+    val dietPlan by viewModel.fetchedDietPlan.collectAsState()
+    val isLoadingPlan by viewModel.isLoadingPlan.collectAsState()
 
-    val tasks = remember {
-        mutableStateListOf(
-            DailyTask(
-                0, "☕", "Sarapan Sehat Pagi",
-                "Mulai hari dengan nutrisi lengkap",
-                "06:00 - 09:00",
-                20,
-                "Sertakan protein, sayur, dan buah",
-                listOf("Oatmeal + pisang + telur", "Roti gandum + alpukat + tomat", "Smoothie buah + yogurt")
-            ),
-            DailyTask(
-                1, "🍽️", "Makan Siang Bergizi",
-                "Porsi seimbang dengan sayuran",
-                "12:00 - 14:00",
-                25,
-                "50% sayur, 25% protein, 25% karbo",
-                listOf("Nasi merah + ikan + sayur bening", "Salad ayam dengan quinoa", "Sup sayuran + tempe")
-            ),
-            DailyTask(
-                2, "💧", "Minum 8 Gelas Air",
-                "Jaga hidrasi sepanjang hari",
-                "Sepanjang hari",
-                15,
-                "2L air = 8 gelas @ 250ml",
-                listOf("Pagi: 2 gelas", "Siang: 3 gelas", "Sore: 2 gelas", "Malam: 1 gelas")
-            ),
-            DailyTask(
-                3, "🍎", "Camilan Sehat",
-                "Buah atau kacang-kacangan",
-                "10:00 atau 16:00",
-                15,
-                "Max 150 kalori per snack",
-                listOf("Segenggam kacang almond", "1 apel atau pir", "Yogurt plain + madu")
-            ),
-            DailyTask(
-                4, "🌙", "Makan Malam Ringan",
-                "Porsi kecil, banyak sayur",
-                "18:00 - 20:00",
-                25,
-                "Makan 3 jam sebelum tidur",
-                listOf("Pepes ikan + tumis sayur", "Sup ayam + sayuran", "Tempe kukus + capcay")
-            )
-        )
+    var taskStatus by remember { mutableStateOf(mutableMapOf<String, Boolean>()) }
+    var showVictoryDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadUserDietProgress()
     }
 
-    val completedCount = tasks.count { it.isCompleted }
-    val progress = (completedCount.toFloat() / tasks.size * 100).toInt()
-
-    val achievements = listOf(
-        Achievement("Minggu Pertama", "⭐", true, Color(0xFFFFC107)),
-        Achievement("Minggu Kedua", "💎", true, Color(0xFF00BCD4)),
-        Achievement("Minggu Ketiga", "🏆", false, Color(0xFF9C27B0)),
-        Achievement("Program Selesai", "👑", false, Color(0xFFFF6FB1))
-    )
-
-    if (showAchievementsModal) {
-        Dialog(onDismissRequest = { showAchievementsModal = false }) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 500.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    listOf(pinkLight, purpleLight)
-                                )
-                            )
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Star,
-                                    contentDescription = null,
-                                    tint = Color.White
-                                )
-                                Text(
-                                    "Pencapaian Anda",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            }
-                            IconButton(onClick = { showAchievementsModal = false }) {
-                                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-                            }
-                        }
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        achievements.forEach { achievement ->
-                            AchievementCard(achievement)
-                        }
-                    }
-                }
-            }
+    LaunchedEffect(dietProgress, dietId) {
+        val idToFetch = dietProgress?.dietId?.takeIf { it.isNotEmpty() } ?: dietId
+        if (idToFetch.isNotEmpty()) {
+            viewModel.fetchDietPlanFromFirebase(idToFetch)
         }
+    }
+
+    LaunchedEffect(dietProgress) {
+        dietProgress?.let {
+            taskStatus = it.tasks.toMutableMap()
+        }
+    }
+
+    val pinkMain = Color(0xFFFF6FB1)
+    val bgGray = Color(0xFFF9FAFB)
+    val isLoadingTotal = isLoadingProgress || isLoadingPlan
+
+    fun toggleTask(key: String) {
+        val current = taskStatus[key] ?: false
+        taskStatus = taskStatus.toMutableMap().apply { put(key, !current) }
     }
 
     Scaffold(
@@ -175,502 +75,174 @@ fun DietStartScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(
-                            "Program Diet $dietType",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                        Text(
-                            "Hari $currentDay dari $totalDays",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
+                        Text("Diet Tracker", fontWeight = FontWeight.Bold)
+                        if (dietPlan != null) Text(dietPlan!!.dietName, fontSize = 12.sp, fontWeight = FontWeight.Normal)
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true } } }) {
                         Icon(Icons.Default.ArrowBack, "Kembali")
                     }
-                },
-                actions = {
-                    IconButton(
-                        onClick = { showAchievementsModal = true },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFFFF3E0))
-                    ) {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = "Achievements",
-                            tint = Color(0xFFFF9800)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
+                }
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(Color(0xFFF5F5F5))
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Stats Cards
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                StatCard("🔥", currentStreak.toString(), "Hari Streak", Modifier.weight(1f))
-                StatCard("🏆", totalPoints.toString(), "Total Poin", Modifier.weight(1f))
-                StatCard("🎯", "$completedCount/${tasks.size}", "Tugas Selesai", Modifier.weight(1f))
+        if (isLoadingTotal || dietPlan == null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = pinkMain)
             }
+        } else {
+            val plan = dietPlan!!
+            val currentDay = dietProgress?.currentDay ?: 1
 
-            // Daily Progress Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.DateRange,
-                                contentDescription = null,
-                                tint = pinkMain,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Progress Hari $currentDay",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            "$progress%",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = pinkMain
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LinearProgressIndicator(
-                        progress = progress / 100f,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(16.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        color = pinkMain,
-                        trackColor = Color(0xFFEEEEEE)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        if (completedCount == tasks.size)
-                            "🎉 Sempurna! Semua tugas hari ini selesai!"
-                        else
-                            "Masih ${tasks.size - completedCount} tugas lagi untuk hari ini",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                }
-            }
+            // waktuDiet sudah Int, bisa langsung dipakai
+            val totalDays = plan.waktuDiet
+            val progress = currentDay.toFloat() / totalDays.toFloat()
+            val animatedProgress by animateFloatAsState(targetValue = progress, label = "progress")
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { isRulesOpen = !isRulesOpen }
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF10B981)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("📋", fontSize = 16.sp)
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                "Aturan Dasar Diet $dietType",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF065F46)
-                            )
-                        }
-                        Icon(
-                            if (isRulesOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = null,
-                            tint = Color(0xFF10B981)
-                        )
-                    }
+            val rotationIndex = (currentDay - 1) % 3
+            val menuCode = when(rotationIndex) { 0 -> "A"; 1 -> "B"; else -> "C" }
 
-                    AnimatedVisibility(visible = isRulesOpen) {
-                        Column(
-                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            RuleItem("1", "Konsistensi: Jalankan program minimal 21 hari untuk hasil optimal")
-                            RuleItem("2", "Porsi: Makan 3x sehari dengan porsi sedang, hindari berlebihan")
-                            RuleItem("3", "Hidrasi: Minum air putih 8 gelas (2L) setiap hari")
-                            RuleItem("4", "Olahraga: Kombinasikan dengan aktivitas fisik minimal 30 menit/hari")
-                            RuleItem("5", "Tidur: Istirahat cukup 7-8 jam setiap malam")
-                        }
-                    }
-                }
-            }
-
-            // Daily Tasks Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = pinkMain,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    "Tugas Harian Anda",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            tasks.forEach { task ->
-                ImprovedTaskCard(
-                    task = task,
-                    onToggle = {
-                        task.isCompleted = !task.isCompleted
-                        if (task.isCompleted) {
-                            totalPoints += task.points
-                        } else {
-                            totalPoints -= task.points
-                        }
-                    }
-                )
-            }
-
-            Button(
-                onClick = {
-                    if (completedCount == tasks.size) {
-                        if (currentDay == totalDays) {
-                            // Navigate to completion page
-                            navController.navigate("diet_completion")
-                        } else {
-                            // Move to next day
-                            currentDay += 1
-                            currentStreak += 1
-                            tasks.forEach { it.isCompleted = false }
-                        }
-                    } else {
-                        // Show alert
-                    }
-                },
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = pinkMain)
+                    .fillMaxSize()
+                    .padding(padding)
+                    .background(bgGray)
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    "Selesaikan Tugas Hari Ini",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                // Progress Header
+                Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFFFD700))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Hari $currentDay / $totalDays", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text("${(animatedProgress * 100).toInt()}%", color = pinkMain, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { animatedProgress },
+                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                            color = pinkMain,
+                            trackColor = Color(0xFFF3E8FF),
+                        )
+                    }
+                }
+
+                // Aturan
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4F4)), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, pinkMain.copy(alpha = 0.2f))) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Warning, null, tint = Color(0xFFBE123C), modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Aturan Penting", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF881337))
+                            Text(plan.aturanDiet.take(80) + "...", fontSize = 12.sp, color = Color(0xFF4B5563), lineHeight = 16.sp)
+                        }
+                    }
+                }
+
+                Text("Tugas Hari Ini (Menu $menuCode)", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+
+                // Tasks
+                val sarapanMenu = when(menuCode) { "A" -> plan.sarapanA; "B" -> plan.sarapanB; else -> plan.sarapanC }
+                DetailedTaskCard("Sarapan", plan.deskripsiSarapan, plan.waktuSarapan, sarapanMenu, plan.tipsSarapan, taskStatus["sarapan"] == true, { toggleTask("sarapan") }, Icons.Default.Restaurant, pinkMain)
+
+                val siangMenu = when(menuCode) { "A" -> plan.makansiangA; "B" -> plan.makansiangB; else -> plan.makansiangC }
+                DetailedTaskCard("Makan Siang", plan.deskripsiMakanSiang, plan.waktuMakanSiang, siangMenu, plan.tipsMakanSiang, taskStatus["siang"] == true, { toggleTask("siang") }, Icons.Default.Restaurant, pinkMain)
+
+                val malamMenu = when(menuCode) {
+                    "A" -> plan.makanmalamA.ifEmpty { "Protein + Sayur" };
+                    "B" -> plan.makanmalamB.ifEmpty { "Protein + Sayur" };
+                    else -> plan.makanmalamC.ifEmpty { "Protein + Sayur" }
+                }
+                DetailedTaskCard("Makan Malam", plan.deskripsiMakanMalam, plan.waktuMakanMalam, malamMenu, plan.tipsMakanMalam, taskStatus["malam"] == true, { toggleTask("malam") }, Icons.Default.Restaurant, pinkMain)
+
+                val camilanMenu = when(menuCode) { "A" -> plan.camilanA; "B" -> plan.camilanB; else -> plan.camilanC }
+                DetailedTaskCard("Camilan Sehat", plan.deskripsiCamilan, plan.waktuCamilan, camilanMenu, plan.tipsCamilan, taskStatus["camilan"] == true, { toggleTask("camilan") }, Icons.Default.Restaurant, pinkMain)
+
+                DetailedTaskCard("Hidrasi Tubuh", "Jaga tubuh tetap terhidrasi", "Sepanjang hari", "8 Gelas Air Putih (2 Liter)", "Minum 1 gelas sebelum makan.", taskStatus["air"] == true, { toggleTask("air") }, Icons.Default.WaterDrop, Color(0xFF3B82F6))
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { viewModel.saveChecklistOnly(taskStatus) { Toast.makeText(context, "Checklist tersimpan!", Toast.LENGTH_SHORT).show() } },
+                        modifier = Modifier.weight(1f).height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, pinkMain),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = pinkMain)
+                    ) { Text("Simpan Saja") }
+
+                    Button(
+                        onClick = {
+                            if (taskStatus.values.count { it } < 3) {
+                                Toast.makeText(context, "Selesaikan minimal 3 tugas!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                viewModel.completeDay(totalDays, onSuccess = { showVictoryDialog = true; taskStatus = mutableMapOf() }, onFinished = { navController.navigate("diet_completion") })
+                            }
+                        },
+                        modifier = Modifier.weight(1f).height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = pinkMain)
+                    ) { Text("Selesaikan Hari") }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
-}
 
-@Composable
-fun StatCard(emoji: String, value: String, label: String, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(emoji, fontSize = 24.sp)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                value,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1F2937)
-            )
-            Text(
-                label,
-                fontSize = 10.sp,
-                color = Color.Gray
-            )
-        }
-    }
-}
-
-@Composable
-fun RuleItem(number: String, text: String) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF10B981)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                number,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-        }
-        Text(
-            text,
-            fontSize = 14.sp,
-            color = Color(0xFF065F46),
-            modifier = Modifier.weight(1f)
+    if (showVictoryDialog) {
+        val currentDay = dietProgress?.currentDay ?: 1
+        AlertDialog(
+            onDismissRequest = { showVictoryDialog = false },
+            icon = { Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFFFD700), modifier = Modifier.size(48.dp)) },
+            title = { Text("Hari ke-${currentDay-1} Selesai!") },
+            text = { Text("Progres disimpan. Lanjut ke Hari ${currentDay}?") },
+            confirmButton = { Button(onClick = { showVictoryDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = pinkMain)) { Text("Lanjut!") } },
+            containerColor = Color.White
         )
     }
 }
 
 @Composable
-fun ImprovedTaskCard(task: DailyTask, onToggle: () -> Unit) {
-    val pinkMain = Color(0xFFFF6FB1)
-
+fun DetailedTaskCard(title: String, description: String, time: String, menu: String, tips: String, isCompleted: Boolean, onCheckChange: () -> Unit, icon: ImageVector, color: Color) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (task.isCompleted)
-                Color(0xFFFCE7F3)
-            else
-                Color.White
-        ),
-        border = if (task.isCompleted)
-            androidx.compose.foundation.BorderStroke(2.dp, pinkMain)
-        else
-            null
+        modifier = Modifier.fillMaxWidth().clickable { onCheckChange() }.background(if(isCompleted) color.copy(alpha = 0.05f) else Color.Transparent, RoundedCornerShape(16.dp))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .then(
-                            if (task.isCompleted)
-                                Modifier.background(
-                                    Brush.horizontalGradient(listOf(pinkMain, Color(0xFFCC7CF0)))
-                                )
-                            else
-                                Modifier.background(Color(0xFFF3F4F6))
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(task.emoji, fontSize = 24.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(36.dp).background(if(isCompleted) color else Color(0xFFF3F4F6), CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = if(isCompleted) Color.White else Color.Gray, modifier = Modifier.size(18.dp))
                 }
-
                 Spacer(modifier = Modifier.width(12.dp))
-
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            task.title,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (task.isCompleted) pinkMain else Color(0xFF1F2937)
-                        )
-                        Checkbox(
-                            checked = task.isCompleted,
-                            onCheckedChange = { onToggle() },
-                            colors = CheckboxDefaults.colors(checkedColor = pinkMain)
-                        )
-                    }
-
-                    Text(
-                        task.description,
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "⏰ ${task.time}",
-                            fontSize = 11.sp,
-                            color = Color.Gray,
-                            modifier = Modifier
-                                .background(Color(0xFFF3F4F6), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                        Text(
-                            "⭐ +${task.points} poin",
-                            fontSize = 11.sp,
-                            color = if (task.isCompleted) Color.White else Color.Gray,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier
-                                .background(
-                                    if (task.isCompleted) pinkMain else Color(0xFFF3F4F6),
-                                    RoundedCornerShape(4.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            "💡 Tips: ${task.shortTip}",
-                            fontSize = 12.sp,
-                            color = Color(0xFF1E40AF)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xFFF9FAFB), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
-                    ) {
-                        Column {
-                            Text(
-                                "Contoh:",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF374151)
-                            )
-                            task.examples.take(2).forEach { example ->
-                                Text(
-                                    "• $example",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF6B7280),
-                                    modifier = Modifier.padding(top = 2.dp)
-                                )
-                            }
-                        }
-                    }
+                    Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1F2937))
+                    if (description.isNotEmpty()) Text(description, fontStyle = FontStyle.Italic, fontSize = 12.sp, color = Color.Gray)
+                }
+                Checkbox(checked = isCompleted, onCheckedChange = { onCheckChange() }, colors = CheckboxDefaults.colors(checkedColor = color))
+            }
+            Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF3F4F6))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Timer, null, tint = color, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(time.ifEmpty { "Sesuai Jadwal" }, fontSize = 12.sp, color = color, fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(menu, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF374151), lineHeight = 20.sp)
+            if (tips.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(modifier = Modifier.fillMaxWidth().background(Color(0xFFFFFBEB), RoundedCornerShape(8.dp)).padding(10.dp), verticalAlignment = Alignment.Top) {
+                    Icon(Icons.Default.Lightbulb, null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(tips, fontSize = 12.sp, color = Color(0xFF92400E), lineHeight = 16.sp)
                 }
             }
         }
     }
 }
-
-@Composable
-fun AchievementCard(achievement: Achievement) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (achievement.isUnlocked)
-                achievement.color.copy(alpha = 0.1f)
-            else
-                Color(0xFFF3F4F6)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (achievement.isUnlocked)
-                            Color.White
-                        else
-                            Color(0xFFE5E7EB)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    achievement.emoji,
-                    fontSize = 32.sp,
-                    color = if (achievement.isUnlocked)
-                        Color.Unspecified
-                    else
-                        Color.Gray
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    achievement.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (achievement.isUnlocked)
-                        Color(0xFF1F2937)
-                    else
-                        Color.Gray
-                )
-                Text(
-                    if (achievement.isUnlocked) "✓ Terbuka" else "🔒 Terkunci",
-                    fontSize = 12.sp,
-                    color = if (achievement.isUnlocked)
-                        Color(0xFF10B981)
-                    else
-                        Color.Gray
-                )
-            }
-        }
-    }
-}
-
-data class Achievement(
-    val title: String,
-    val emoji: String,
-    val isUnlocked: Boolean,
-    val color: Color
-)

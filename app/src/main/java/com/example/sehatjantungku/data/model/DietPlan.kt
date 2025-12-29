@@ -1,13 +1,13 @@
 package com.example.sehatjantungku.data.model
 
 data class DietPlan(
-    val id: String,
-    val dietName: String,
-    val deskripsi: String,
-    val waktuDiet: String,
-    val aturanDiet: String,
+    val id: Int = 0,
+    val dietName: String = "",
+    val deskripsi: String = "",
+    val waktuDiet: Int = 30,
+    val aturanDiet: String = "",
 
-    // Sarapan
+    // Menu & Waktu
     val sarapanA: String = "",
     val sarapanB: String = "",
     val sarapanC: String = "",
@@ -15,7 +15,6 @@ data class DietPlan(
     val waktuSarapan: String = "",
     val deskripsiSarapan: String = "",
 
-    // Makan Siang
     val makansiangA: String = "",
     val makansiangB: String = "",
     val makansiangC: String = "",
@@ -23,7 +22,6 @@ data class DietPlan(
     val waktuMakanSiang: String = "",
     val deskripsiMakanSiang: String = "",
 
-    // Makan Malam
     val makanmalamA: String = "",
     val makanmalamB: String = "",
     val makanmalamC: String = "",
@@ -31,7 +29,6 @@ data class DietPlan(
     val waktuMakanMalam: String = "",
     val deskripsiMakanMalam: String = "",
 
-    // Camilan
     val camilanA: String = "",
     val camilanB: String = "",
     val camilanC: String = "",
