@@ -7,6 +7,8 @@ import com.example.sehatjantungku.data.model.DietPlan
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.PropertyName // IMPORT PENTING
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +45,9 @@ data class UserDietProgress(
         "sarapan" to false, "siang" to false, "malam" to false, "camilan" to false, "air" to false
     ),
     val lastUpdated: Long = System.currentTimeMillis(),
+
+    // [PERBAIKAN UTAMA: Tambahkan Anotasi ini agar database terbaca benar]
+    @get:PropertyName("isCompleted")
     val isCompleted: Boolean = false
 )
 
@@ -124,7 +129,7 @@ class DietProgramViewModel : ViewModel() {
 
     fun startNewDiet(dietId: String, dietName: String, onSuccess: () -> Unit) {
         val userId = auth.currentUser?.uid ?: return
-        val newProgress = UserDietProgress(userId = userId, dietId = dietId, dietName = dietName, currentDay = 1)
+        val newProgress = UserDietProgress(userId = userId, dietId = dietId, dietName = dietName, currentDay = 1, isCompleted = false)
         viewModelScope.launch {
             try {
                 db.collection("users").document(userId)
@@ -162,10 +167,9 @@ class DietProgramViewModel : ViewModel() {
                         .collection("diet_program").document("active_diet")
                         .update("isCompleted", true).await()
 
-                    // Simpan Badge
                     saveEarnedBadge(current.dietId, current.dietName)
 
-                    // [PERBAIKAN PENTING] Update state lokal agar UI tahu diet sudah selesai
+                    // Update local state isCompleted = true
                     _dietProgress.value = current.copy(isCompleted = true)
 
                     onFinished()
@@ -195,7 +199,7 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // [PERBAIKAN] Fungsi Ulangi Diet (Reset)
+    // [PERBAIKAN] Fungsi Ulangi Diet dengan Jeda Keamanan
     fun repeatCurrentDiet(onSuccess: (String) -> Unit) {
         val userId = auth.currentUser?.uid ?: return
         val current = _dietProgress.value ?: return
@@ -207,24 +211,27 @@ class DietProgramViewModel : ViewModel() {
                     "camilan" to false, "air" to false
                 )
 
-                // Update Firestore: Reset hari ke 1 dan hapus status completed
+                // 1. Update Firestore
                 db.collection("users").document(userId)
                     .collection("diet_program").document("active_diet")
                     .update(
                         "currentDay", 1,
-                        "isCompleted", false, // PENTING: Set false
+                        "isCompleted", false, // Reset completed jadi false
                         "tasks", emptyTasks,
                         "lastUpdated", System.currentTimeMillis()
                     )
                     .await()
 
-                // Update local state agar UI langsung berubah
+                // 2. Update Local State
                 _dietProgress.value = current.copy(
                     currentDay = 1,
                     isCompleted = false,
                     tasks = emptyTasks,
                     lastUpdated = System.currentTimeMillis()
                 )
+
+                // 3. Beri jeda sedikit agar database sinkron sebelum pindah layar
+                delay(500)
 
                 onSuccess(current.dietId)
             } catch (e: Exception) { e.printStackTrace() }
@@ -275,7 +282,7 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // Update Functions (Shortened for brevity but logic is same)
+    // Update Functions (Shortened)
     fun updateBloodPressure(v: String) { _state.value = _state.value.copy(bloodPressure = v) }
     fun updateCholesterol(v: String) { _state.value = _state.value.copy(cholesterol = v) }
     fun updateFoodPreference(v: String) { _state.value = _state.value.copy(foodPreference = v) }

@@ -44,10 +44,11 @@ fun DietStartScreen(
     var taskStatus by remember { mutableStateOf(mutableMapOf<String, Boolean>()) }
     var showVictoryDialog by remember { mutableStateOf(false) }
 
-    // State untuk Menu & Dialog Pembatalan
+    // State Menu & Stop Dialog
     var showMenu by remember { mutableStateOf(false) }
     var showStopDialog by remember { mutableStateOf(false) }
 
+    // [PERBAIKAN] Selalu load data saat layar dibuka untuk memastikan data fresh (misal setelah reset)
     LaunchedEffect(Unit) {
         viewModel.loadUserDietProgress()
     }
@@ -74,29 +75,26 @@ fun DietStartScreen(
         taskStatus = taskStatus.toMutableMap().apply { put(key, !current) }
     }
 
-    // --- DIALOG KONFIRMASI PEMBATALAN DIET ---
+    // --- DIALOG STOP DIET ---
     if (showStopDialog) {
         AlertDialog(
             onDismissRequest = { showStopDialog = false },
             icon = { Icon(Icons.Default.DeleteForever, null, tint = Color.Red) },
             title = { Text("Batalkan Program Diet?") },
-            text = { Text("Seluruh progres Anda akan dihapus dan tidak bisa dikembalikan. Anda harus mengisi ulang kuesioner jika ingin memulai lagi.") },
+            text = { Text("Seluruh progres akan dihapus. Anda harus mengisi ulang kuesioner jika ingin memulai lagi.") },
             confirmButton = {
                 Button(
                     onClick = {
                         viewModel.stopCurrentDiet {
                             showStopDialog = false
                             Toast.makeText(context, "Program diet dibatalkan", Toast.LENGTH_SHORT).show()
-                            // Kembali ke halaman Home atau Form awal
                             navController.navigate("diet_program") {
                                 popUpTo("home") { inclusive = false }
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                ) {
-                    Text("Ya, Hentikan")
-                }
+                ) { Text("Ya, Hentikan") }
             },
             dismissButton = {
                 TextButton(onClick = { showStopDialog = false }) { Text("Batal") }
@@ -119,10 +117,9 @@ fun DietStartScreen(
                         Icon(Icons.Default.ArrowBack, "Kembali")
                     }
                 },
-                // --- UPDATE: MENU POJOK KANAN ATAS ---
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, "Opsi Lain")
+                        Icon(Icons.Default.MoreVert, "Opsi")
                     }
                     DropdownMenu(
                         expanded = showMenu,
@@ -135,9 +132,7 @@ fun DietStartScreen(
                                 showMenu = false
                                 showStopDialog = true
                             },
-                            leadingIcon = {
-                                Icon(Icons.Default.Cancel, null, tint = Color.Red)
-                            }
+                            leadingIcon = { Icon(Icons.Default.Cancel, null, tint = Color.Red) }
                         )
                     }
                 }
@@ -151,7 +146,6 @@ fun DietStartScreen(
         } else {
             val plan = dietPlan!!
             val currentDay = dietProgress?.currentDay ?: 1
-
             val totalDays = plan.waktuDiet
             val progress = currentDay.toFloat() / totalDays.toFloat()
             val animatedProgress by animateFloatAsState(targetValue = progress, label = "progress")
@@ -168,7 +162,7 @@ fun DietStartScreen(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Progress Header
+                // Header Progress
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -188,48 +182,29 @@ fun DietStartScreen(
                     }
                 }
 
-                // --- UPDATE: Aturan Penting (FULL TEXT) ---
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4F4)),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, pinkMain.copy(alpha = 0.2f))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(), // Pastikan row memenuhi lebar
-                        verticalAlignment = Alignment.Top // Icon di atas agar rapi jika teks panjang
-                    ) {
+                // Aturan (Full Text)
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4F4)), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, pinkMain.copy(alpha = 0.2f))) {
+                    Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.Top) {
                         Icon(Icons.Default.Warning, null, tint = Color(0xFFBE123C), modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text("Aturan Penting", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF881337))
                             Spacer(modifier = Modifier.height(4.dp))
-                            // PERBAIKAN: Menghapus .take(80) agar teks tampil semua
-                            Text(
-                                text = plan.aturanDiet,
-                                fontSize = 13.sp,
-                                color = Color(0xFF4B5563),
-                                lineHeight = 18.sp // Line height agar nyaman dibaca
-                            )
+                            Text(plan.aturanDiet, fontSize = 13.sp, color = Color(0xFF4B5563), lineHeight = 18.sp)
                         }
                     }
                 }
 
                 Text("Tugas Hari Ini (Menu $menuCode)", fontWeight = FontWeight.Bold, fontSize = 18.sp)
 
-                // Tasks
+                // Task List
                 val sarapanMenu = when(menuCode) { "A" -> plan.sarapanA; "B" -> plan.sarapanB; else -> plan.sarapanC }
                 DetailedTaskCard("Sarapan", plan.deskripsiSarapan, plan.waktuSarapan, sarapanMenu, plan.tipsSarapan, taskStatus["sarapan"] == true, { toggleTask("sarapan") }, Icons.Default.Restaurant, pinkMain)
 
                 val siangMenu = when(menuCode) { "A" -> plan.makansiangA; "B" -> plan.makansiangB; else -> plan.makansiangC }
                 DetailedTaskCard("Makan Siang", plan.deskripsiMakanSiang, plan.waktuMakanSiang, siangMenu, plan.tipsMakanSiang, taskStatus["siang"] == true, { toggleTask("siang") }, Icons.Default.Restaurant, pinkMain)
 
-                val malamMenu = when(menuCode) {
-                    "A" -> plan.makanmalamA.ifEmpty { "Protein + Sayur" };
-                    "B" -> plan.makanmalamB.ifEmpty { "Protein + Sayur" };
-                    else -> plan.makanmalamC.ifEmpty { "Protein + Sayur" }
-                }
+                val malamMenu = when(menuCode) { "A" -> plan.makanmalamA.ifEmpty { "Protein + Sayur" }; "B" -> plan.makanmalamB.ifEmpty { "Protein + Sayur" }; else -> plan.makanmalamC.ifEmpty { "Protein + Sayur" } }
                 DetailedTaskCard("Makan Malam", plan.deskripsiMakanMalam, plan.waktuMakanMalam, malamMenu, plan.tipsMakanMalam, taskStatus["malam"] == true, { toggleTask("malam") }, Icons.Default.Restaurant, pinkMain)
 
                 val camilanMenu = when(menuCode) { "A" -> plan.camilanA; "B" -> plan.camilanB; else -> plan.camilanC }
@@ -239,6 +214,7 @@ fun DietStartScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                // Action Buttons
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
                         onClick = { viewModel.saveChecklistOnly(taskStatus) { Toast.makeText(context, "Checklist tersimpan!", Toast.LENGTH_SHORT).show() } },
@@ -279,7 +255,8 @@ fun DietStartScreen(
     }
 }
 
-// Komponen Helper tetap sama
+// Komponen Helper DetailedTaskCard tetap sama, tidak perlu diubah.
+// (Copy dari file sebelumnya jika belum ada di sini)
 @Composable
 fun DetailedTaskCard(title: String, description: String, time: String, menu: String, tips: String, isCompleted: Boolean, onCheckChange: () -> Unit, icon: ImageVector, color: Color) {
     Card(
