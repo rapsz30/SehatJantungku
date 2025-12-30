@@ -195,7 +195,7 @@ fun DietStartScreen(
                     }
                 }
 
-                Text("Tugas Hari Ini (Menu $menuCode)", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Tugas Hari Ini: ", fontWeight = FontWeight.Bold, fontSize = 18.sp)
 
                 // Task List
                 val sarapanMenu = when(menuCode) { "A" -> plan.sarapanA; "B" -> plan.sarapanB; else -> plan.sarapanC }
@@ -210,7 +210,11 @@ fun DietStartScreen(
                 val camilanMenu = when(menuCode) { "A" -> plan.camilanA; "B" -> plan.camilanB; else -> plan.camilanC }
                 DetailedTaskCard("Camilan Sehat", plan.deskripsiCamilan, plan.waktuCamilan, camilanMenu, plan.tipsCamilan, taskStatus["camilan"] == true, { toggleTask("camilan") }, Icons.Default.Restaurant, pinkMain)
 
-                DetailedTaskCard("Hidrasi Tubuh", "Jaga tubuh tetap terhidrasi", "Sepanjang hari", "8 Gelas Air Putih (2 Liter)", "Minum 1 gelas sebelum makan.", taskStatus["air"] == true, { toggleTask("air") }, Icons.Default.WaterDrop, Color(0xFF3B82F6))
+                DetailedTaskCard("Hidrasi Tubuh", "Jaga tubuh tetap terhidrasi", "Sepanjang hari", "Bangun tidur 1 gelas \n" +
+                        "Pagi 2 gelas \n" +
+                        "Siang 2 gelas \n" +
+                        "Sore 2 gelas \n" +
+                        "Malam 1 gelas", "8 Gelas Air Putih (2 Liter)", taskStatus["air"] == true, { toggleTask("air") }, Icons.Default.WaterDrop, Color(0xFF3B82F6))
 
                 Spacer(modifier = Modifier.height(10.dp))
 

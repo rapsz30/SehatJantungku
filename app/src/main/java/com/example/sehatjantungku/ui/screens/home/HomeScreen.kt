@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -16,12 +17,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,7 +41,7 @@ fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel()
 ) {
-    // Collect Data dari ViewModel
+    // Collect Data
     val userName by viewModel.userName.collectAsState()
     val topArticles by viewModel.topArticles.collectAsState()
 
@@ -48,121 +51,222 @@ fun HomeScreen(
                 navController = navController,
                 currentRoute = "home"
             )
-        }
+        },
+        containerColor = Color(0xFFFAFAFA)
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(bottom = 20.dp),
+            // [PERBAIKAN 2] Jarak diperkecil dari 20.dp menjadi 12.dp agar tidak kejauhan
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // --- BAGIAN USER NAME ---
+            // --- 1. HEADER USER ---
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
+                        // Profile Picture Placeholder
+                        Surface(
                             modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(PinkLight)
+                                .size(50.dp)
                                 .clickable { navController.navigate("profile") },
-                            contentAlignment = Alignment.Center
+                            shape = CircleShape,
+                            color = PinkLight.copy(alpha = 0.2f)
                         ) {
-                            Icon(Icons.Default.Person, "Profile", tint = Color.White)
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Person, contentDescription = "Profile", tint = PinkMain)
+                            }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
                         Column {
-                            Text("Selamat datang kembali", fontSize = 12.sp, color = Color.Gray)
-                            // TEXT DINAMIS DARI DATABASE
+                            Text("Selamat Datang,", fontSize = 12.sp, color = Color.Gray)
                             Text(
                                 text = userName,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
                             )
                         }
                     }
-                    IconButton(onClick = { navController.navigate("notifications") }) {
-                        Icon(Icons.Default.Notifications, "Notifications", tint = PinkMain)
+
+                    // [PERBAIKAN 1] Notifikasi Icon Bersih (Tanpa Background Kotak/Segi-8)
+                    IconButton(
+                        onClick = { navController.navigate("notifications") }
+                    ) {
+                        Icon(
+                            Icons.Outlined.Notifications,
+                            contentDescription = "Notifikasi",
+                            tint = PinkMain,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
                 }
             }
 
-            // Hero Banner (Tetap sama)
+            // --- 2. HERO BANNER ---
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 20.dp)
                         .height(160.dp)
+                        .shadow(4.dp, RoundedCornerShape(20.dp))
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Brush.horizontalGradient(listOf(PinkMain, PurpleLight))),
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(PinkMain, PurpleLight)
+                            )
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.FavoriteBorder, "Heart", tint = Color.White, modifier = Modifier.size(48.dp))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Welcome to SehatJantungku", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text("Because every heartbeat matters", color = Color.White.copy(0.9f), fontSize = 14.sp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.FavoriteBorder,
+                            "Heart",
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier.size(56.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                "SehatJantungku",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Because every heartbeat matters",
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontSize = 12.sp,
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                            )
+                        }
                     }
                 }
             }
 
-            // Feature Menu (Tetap sama)
+            // --- 3. MENU FITUR ---
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp, 24.dp),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp), // Sedikit padding vertical
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    FeatureItem(Icons.Default.Favorite, "CVD Risk Predictor", { navController.navigate("cvd_risk") }, Modifier.weight(1f))
-                    FeatureItem(Icons.Default.Restaurant, "Diet Program", { navController.navigate("diet_program") }, Modifier.weight(1f))
-                    FeatureItem(Icons.Default.Chat, "Chatbot", { navController.navigate("chatbot") }, Modifier.weight(1f))
-                }
-            }
-
-            // Top Article Header
-            item {
-                Text(
-                    text = "Top Article",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            // --- BAGIAN LIST ARTIKEL ---
-            items(topArticles) { article ->
-                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    ArticleItem(
-                        article = article,
-                        onClick = {
-                            navController.navigate("article_detail/${article.id}")
-                        }
+                    FeatureItem(
+                        icon = Icons.Default.MonitorHeart,
+                        label = "Cek Risiko",
+                        onClick = { navController.navigate("cvd_risk") }
+                    )
+                    FeatureItem(
+                        icon = Icons.Default.RestaurantMenu,
+                        label = "Diet Plan",
+                        onClick = { navController.navigate("diet_program") }
+                    )
+                    FeatureItem(
+                        icon = Icons.Default.SmartToy,
+                        label = "Chatbot AI",
+                        onClick = { navController.navigate("chatbot") }
                     )
                 }
             }
+
+            // --- 4. HEADER ARTIKEL ---
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Artikel Pilihan",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "Lihat Semua",
+                        fontSize = 12.sp,
+                        color = PinkMain,
+                        modifier = Modifier.clickable { navController.navigate("content") }
+                    )
+                }
+            }
+
+            // --- 5. LIST ARTIKEL ---
+            if (topArticles.isEmpty()) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = PinkMain, modifier = Modifier.size(30.dp))
+                    }
+                }
+            } else {
+                items(topArticles) { article ->
+                    // Padding horizontal saja, vertikal diatur oleh Arrangement parent
+                    Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                        ArticleItem(
+                            article = article,
+                            onClick = {
+                                navController.navigate("article_detail/${article.id}")
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
-// Komponen FeatureItem (Tetap sama)
+// --- KOMPONEN PENDUKUNG ---
+
 @Composable
-fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier.clickable(onClick = onClick)) {
-        Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Brush.radialGradient(listOf(PinkMain, PinkLight))), contentAlignment = Alignment.Center) {
-            Icon(icon, label, tint = Color.White, modifier = Modifier.size(28.dp))
+fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .width(80.dp)
+    ) {
+        Surface(
+            modifier = Modifier.size(56.dp),
+            shape = CircleShape,
+            color = Color.White,
+            shadowElevation = 2.dp
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = PinkMain,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(label, fontSize = 12.sp, color = Color.Black, textAlign = TextAlign.Center, lineHeight = 14.sp)
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color.DarkGray,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
-// --- ITEM ARTIKEL YANG DIPERBARUI (Bentuk Card seperti ContentScreen) ---
 @Composable
 fun ArticleItem(article: Article, onClick: () -> Unit) {
     Card(
@@ -170,22 +274,24 @@ fun ArticleItem(article: Article, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier
                 .padding(12.dp)
-                .height(100.dp)
+                .height(80.dp)
         ) {
             AsyncImage(
                 model = article.imageUrl,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.LightGray),
                 contentScale = ContentScale.Crop
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             Column(
                 modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Center
@@ -194,14 +300,17 @@ fun ArticleItem(article: Article, onClick: () -> Unit) {
                     text = article.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    maxLines = 2
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 18.sp
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = article.description,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     color = Color.Gray,
-                    maxLines = 2
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
