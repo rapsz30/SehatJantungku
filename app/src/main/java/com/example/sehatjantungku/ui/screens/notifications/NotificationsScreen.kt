@@ -42,10 +42,7 @@ data class Notification(
 fun NotificationsScreen(navController: NavController) {
     // Data Dummy dengan Tipe Spesifik
     val notifications = listOf(
-        Notification(1, "Reminder Minum Obat", "Waktunya minum obat jantung Anda", "5m lalu", false, NotificationType.REMINDER),
-        Notification(2, "Artikel Baru", "Baca tips terbaru: Diet Rendah Garam", "1j lalu", false, NotificationType.ARTICLE),
-        Notification(3, "Jadwal Check-up", "Jangan lupa jadwal kontrol ke Dokter Budi besok pagi", "2j lalu", true, NotificationType.CHECKUP),
-        Notification(4, "Hebat!", "Anda konsisten mengisi jurnal diet selama 7 hari", "1h lalu", true, NotificationType.ACHIEVEMENT)
+        Notification(1, "Reminder Diet", "Waktunya Sarapan", "5m lalu", false, NotificationType.REMINDER),
     )
 
     // Background abu muda (Senada dengan Home/Content)
