@@ -1,5 +1,6 @@
 package com.example.sehatjantungku.ui.screens.content
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,9 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,57 +36,84 @@ fun ContentScreen(
     val isLoading by viewModel.isLoading
     var searchQuery by remember { mutableStateOf("") }
 
+    // Filter artikel berdasarkan search query
+    val filteredArticles = articles.filter {
+        it.title.contains(searchQuery, ignoreCase = true) ||
+                it.description.contains(searchQuery, ignoreCase = true)
+    }
+
     Scaffold(
-        bottomBar = { BottomNavBar(navController, "content") }
+        bottomBar = {
+            BottomNavBar(navController = navController, currentRoute = "content")
+        },
+        containerColor = Color(0xFFFAFAFA) // Background senada dengan HomeScreen
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
         ) {
-            // Header Baru: "Article"
-            Text(
-                text = "Artikel",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Cari artikel...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkMain,
-                    unfocusedBorderColor = Color.LightGray
+            // --- HEADER & SEARCH BAR ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "Artikel Kesehatan",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
-            )
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+                // Search Bar Modern
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Cari topik kesehatan...", fontSize = 14.sp, color = Color.Gray) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = PinkMain) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PinkMain,
+                        unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
+                        focusedContainerColor = Color(0xFFFAFAFA),
+                        unfocusedContainerColor = Color(0xFFFAFAFA)
+                    ),
+                    singleLine = true
+                )
+            }
 
+            // --- LIST CONTENT ---
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = PinkMain)
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp) // Jarak konsisten 12.dp
                 ) {
-                    val filteredArticles = articles.filter {
-                        it.title.contains(searchQuery, ignoreCase = true)
-                    }
-                    items(filteredArticles) { article ->
-                        ArticleCard(article = article) {
-                            // Rute navigasi detail artikel
-                            navController.navigate("article_detail/${article.id}")
+                    if (filteredArticles.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(top = 50.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Artikel tidak ditemukan", color = Color.Gray)
+                            }
+                        }
+                    } else {
+                        items(filteredArticles) { article ->
+                            ArticleCard(article) {
+                                navController.navigate("article_detail/${article.id}")
+                            }
                         }
                     }
+                    // Spacer bawah agar tidak ketutup navbar
+                    item { Spacer(modifier = Modifier.height(10.dp)) }
                 }
             }
         }
@@ -95,39 +125,63 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+            .clickable(onClick = onClick)
+            .shadow(2.dp, RoundedCornerShape(12.dp)), // Shadow halus
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(0.dp) // Elevation di-handle oleh shadow
     ) {
         Row(
             modifier = Modifier
                 .padding(12.dp)
-                .height(100.dp)
+                .height(90.dp) // Tinggi sedikit diperbesar agar lega
         ) {
+            // Gambar Artikel
             AsyncImage(
                 model = article.imageUrl,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .width(90.dp)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.LightGray),
                 contentScale = ContentScale.Crop
             )
-            Spacer(modifier = Modifier.width(12.dp))
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            // Teks Artikel
             Column(
                 modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Center
             ) {
+                // Kategori atau Tanggal (Opsional, pemanis)
+                Text(
+                    text = if(article.readTime.isNotEmpty()) article.readTime else "Kesehatan Jantung",
+                    fontSize = 10.sp,
+                    color = PinkMain,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
                     text = article.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    maxLines = 2
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 18.sp,
+                    color = Color.Black
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
-                    text = "${article.description}",
-                    fontSize = 12.sp,
-                    color = Color.Gray
+                    text = article.description,
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 14.sp
                 )
             }
         }

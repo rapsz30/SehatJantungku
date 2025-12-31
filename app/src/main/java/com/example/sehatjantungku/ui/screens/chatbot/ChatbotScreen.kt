@@ -16,13 +16,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.sehatjantungku.ui.theme.PinkMain
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +38,9 @@ fun ChatbotScreen(
     val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val pinkMain = Color(0xFFFF6FB1)
+
+    // Warna Background Layar
+    val bgLight = Color(0xFFFAFAFA)
 
     // Auto-scroll ke bawah saat ada pesan baru
     LaunchedEffect(messages.size) {
@@ -44,6 +51,7 @@ fun ChatbotScreen(
 
     Scaffold(
         topBar = {
+            // [PERBAIKAN] Header disamakan dengan Diet/CVD (Gradient)
             TopAppBar(
                 title = {
                     Column {
@@ -51,12 +59,12 @@ fun ChatbotScreen(
                             "Asisten Jantung",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White // Teks Putih
                         )
                         Text(
                             "AI Support System",
                             fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = Color.White.copy(alpha = 0.8f) // Teks Putih Transparan
                         )
                     }
                 },
@@ -65,36 +73,41 @@ fun ChatbotScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = Color.White // Icon Putih
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = pinkMain
+                    containerColor = Color.Transparent // Transparan agar gradasi terlihat
+                ),
+                modifier = Modifier.background(
+                    // Gradasi yang sama dengan DietProgramScreen
+                    Brush.horizontalGradient(
+                        colors = listOf(Color(0xFFFF8CCF), Color(0xFFCC7CF0))
+                    )
                 )
             )
-        }
+        },
+        containerColor = bgLight
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF5F5F5))
         ) {
-            // --- DISCLAIMER BANNER (PENTING) ---
+            // --- DISCLAIMER BANNER ---
             Surface(
-                color = Color(0xFFFFF4E5), // Warna oranye muda peringatan
-                modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 2.dp
+                color = Color(0xFFFFF4E5), // Oranye muda
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Warning, null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Warning, null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "AI ini hanya pendukung keputusan. Bukan pengganti diagnosis medis. Konsultasikan dengan dokter untuk penanganan lanjut.",
+                        text = "AI pendukung keputusan. Bukan pengganti dokter.",
                         fontSize = 11.sp,
                         color = Color(0xFF92400E),
                         lineHeight = 14.sp
@@ -112,57 +125,64 @@ fun ChatbotScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(messages) { message ->
-                    ChatBubble(message, pinkMain)
+                    ChatBubble(message)
                 }
             }
 
-            // --- INPUT TEXT ---
-            Surface(
-                color = Color.White,
-                tonalElevation = 4.dp
+            // --- INPUT AREA (Floating Style) ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        placeholder = { Text("Tanya seputar kesehatan jantung...", fontSize = 14.sp, color = Color.Gray) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = pinkMain,
-                            unfocusedBorderColor = Color.LightGray,
-                            cursorColor = pinkMain
-                        ),
-                        maxLines = 3
-                    )
-
-                    IconButton(
-                        onClick = {
-                            if (inputText.isNotBlank()) {
-                                viewModel.sendMessage(inputText)
-                                inputText = ""
-                            }
-                        },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(
-                                color = if (inputText.isNotBlank()) pinkMain else Color.Gray,
-                                shape = CircleShape
-                            ),
-                        enabled = inputText.isNotBlank()
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = Color.White
+                        OutlinedTextField(
+                            value = inputText,
+                            onValueChange = { inputText = it },
+                            placeholder = { Text("Tanya sesuatu...", fontSize = 14.sp, color = Color.Gray) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 8.dp, end = 8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                cursorColor = PinkMain,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            maxLines = 3
                         )
+
+                        IconButton(
+                            onClick = {
+                                if (inputText.isNotBlank()) {
+                                    viewModel.sendMessage(inputText)
+                                    inputText = ""
+                                }
+                            },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(
+                                    color = if (inputText.isNotBlank()) PinkMain else Color.LightGray,
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -171,12 +191,12 @@ fun ChatbotScreen(
 }
 
 @Composable
-fun ChatBubble(message: ChatMessage, primaryColor: Color) {
+fun ChatBubble(message: ChatMessage) {
     val isUser = message.isUser
     val isError = message.isError
 
     val bubbleColor = when {
-        isUser -> primaryColor
+        isUser -> PinkMain
         isError -> MaterialTheme.colorScheme.errorContainer
         else -> Color.White
     }
@@ -187,12 +207,14 @@ fun ChatBubble(message: ChatMessage, primaryColor: Color) {
         else -> Color.Black
     }
 
+    val shadowModifier = if (!isUser) Modifier.shadow(1.dp, RoundedCornerShape(16.dp)) else Modifier
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
         Box(
-            modifier = Modifier
+            modifier = shadowModifier
                 .widthIn(max = 280.dp)
                 .clip(
                     RoundedCornerShape(
@@ -203,13 +225,39 @@ fun ChatBubble(message: ChatMessage, primaryColor: Color) {
                     )
                 )
                 .background(bubbleColor)
-                .padding(12.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Text(
-                text = message.message,
+                text = formatMessage(message.message),
                 color = textColor,
-                fontSize = 14.sp
+                fontSize = 14.sp,
+                lineHeight = 20.sp
             )
+        }
+    }
+}
+
+// --- FUNGSI FORMATTING (Bold & Bullet) ---
+@Composable
+fun formatMessage(text: String): androidx.compose.ui.text.AnnotatedString {
+    return buildAnnotatedString {
+        val lines = text.split("\n")
+        lines.forEachIndexed { index, line ->
+            var currentLine = line.trim()
+            if (currentLine.startsWith("* ")) {
+                currentLine = "• " + currentLine.substring(2)
+            }
+            val parts = currentLine.split("**")
+            parts.forEachIndexed { i, part ->
+                if (i % 2 == 1) {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(part)
+                    }
+                } else {
+                    append(part)
+                }
+            }
+            if (index < lines.size - 1) append("\n")
         }
     }
 }
