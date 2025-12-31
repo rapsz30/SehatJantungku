@@ -7,7 +7,7 @@ import com.example.sehatjantungku.data.model.DietPlan
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.PropertyName // IMPORT PENTING
+import com.google.firebase.firestore.PropertyName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,7 +46,6 @@ data class UserDietProgress(
     ),
     val lastUpdated: Long = System.currentTimeMillis(),
 
-    // [PERBAIKAN UTAMA: Tambahkan Anotasi ini agar database terbaca benar]
     @get:PropertyName("isCompleted")
     val isCompleted: Boolean = false
 )
@@ -89,7 +88,7 @@ class DietProgramViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val generativeModel = GenerativeModel(
-        modelName = "gemini-2.5-flash",
+        modelName = "gemini-1.5-flash", // Pastikan model name sesuai
         apiKey = BuildConfig.GEMINI_API_KEY
     )
 
@@ -98,8 +97,18 @@ class DietProgramViewModel : ViewModel() {
     }
 
     // ==========================================
-    // 1. DATA DIET PLAN & PROGRESS
+    // 1. DATA DIET PLAN & PROGRESS (PERBAIKAN UTAMA)
     // ==========================================
+
+    // Panggil fungsi ini saat User Logout agar data tidak tertinggal di memori
+    fun clearUserData() {
+        _state.value = DietProgramState() // Reset Form Input
+        _dietProgress.value = null        // Reset Progress
+        _cvdDataAvailable.value = false
+        _userBadges.value = emptyList()
+        _fetchedDietPlan.value = null
+    }
+
     fun fetchDietPlanFromFirebase(dietId: String) {
         viewModelScope.launch {
             _isLoadingPlan.value = true
@@ -114,16 +123,43 @@ class DietProgramViewModel : ViewModel() {
     }
 
     fun loadUserDietProgress() {
-        val userId = auth.currentUser?.uid ?: return
+        val userId = auth.currentUser?.uid
+
+        // Validasi: Jika tidak ada user login, reset semuanya
+        if (userId == null) {
+            _dietProgress.value = null
+            _isLoadingProgress.value = false
+            return
+        }
+
         viewModelScope.launch {
             _isLoadingProgress.value = true
+
+            // [PENTING] Reset data lama dulu agar UI tidak membaca data User sebelumnya
+            _dietProgress.value = null
+
             try {
                 val doc = db.collection("users").document(userId)
                     .collection("diet_program").document("active_diet")
                     .get().await()
 
-                _dietProgress.value = if (doc.exists()) doc.toObject(UserDietProgress::class.java) else null
-            } catch (e: Exception) { e.printStackTrace() } finally { _isLoadingProgress.value = false }
+                if (doc.exists()) {
+                    val progress = doc.toObject(UserDietProgress::class.java)
+                    // Validasi ganda: Pastikan data milik user yg sedang login
+                    if (progress != null && progress.userId == userId) {
+                        _dietProgress.value = progress
+                    } else {
+                        _dietProgress.value = null
+                    }
+                } else {
+                    _dietProgress.value = null
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _dietProgress.value = null
+            } finally {
+                _isLoadingProgress.value = false
+            }
         }
     }
 
@@ -199,7 +235,6 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // [PERBAIKAN] Fungsi Ulangi Diet dengan Jeda Keamanan
     fun repeatCurrentDiet(onSuccess: (String) -> Unit) {
         val userId = auth.currentUser?.uid ?: return
         val current = _dietProgress.value ?: return
@@ -216,7 +251,7 @@ class DietProgramViewModel : ViewModel() {
                     .collection("diet_program").document("active_diet")
                     .update(
                         "currentDay", 1,
-                        "isCompleted", false, // Reset completed jadi false
+                        "isCompleted", false,
                         "tasks", emptyTasks,
                         "lastUpdated", System.currentTimeMillis()
                     )
@@ -230,9 +265,7 @@ class DietProgramViewModel : ViewModel() {
                     lastUpdated = System.currentTimeMillis()
                 )
 
-                // 3. Beri jeda sedikit agar database sinkron sebelum pindah layar
                 delay(500)
-
                 onSuccess(current.dietId)
             } catch (e: Exception) { e.printStackTrace() }
         }
@@ -282,7 +315,7 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // Update Functions (Shortened)
+    // Update Functions
     fun updateBloodPressure(v: String) { _state.value = _state.value.copy(bloodPressure = v) }
     fun updateCholesterol(v: String) { _state.value = _state.value.copy(cholesterol = v) }
     fun updateFoodPreference(v: String) { _state.value = _state.value.copy(foodPreference = v) }

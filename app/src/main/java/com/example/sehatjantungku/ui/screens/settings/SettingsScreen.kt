@@ -18,13 +18,18 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel // [PENTING] Import ini
 import androidx.navigation.NavController
-import com.example.sehatjantungku.ui.components.BottomNavBar // Import BottomNavBar
+import com.example.sehatjantungku.ui.components.BottomNavBar
+import com.example.sehatjantungku.ui.screens.diet.DietProgramViewModel // [PENTING] Import ViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen(
+    navController: NavController,
+    dietViewModel: DietProgramViewModel = viewModel()
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -34,17 +39,15 @@ fun SettingsScreen(navController: NavController) {
                         fontWeight = FontWeight.Bold
                     )
                 },
-                // HAPUS navigationIcon (Arrow Back) karena ini menu utama
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White
                 )
             )
         },
-        // TAMBAHKAN BottomNavBar DI SINI
         bottomBar = {
             BottomNavBar(
                 navController = navController,
-                currentRoute = "settings" // Set aktif di tab Settings
+                currentRoute = "settings"
             )
         }
     ) { paddingValues ->
@@ -96,14 +99,18 @@ fun SettingsScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // --- TOMBOL LOGOUT ---
+            // --- TOMBOL LOGOUT (SUDAH DIPERBAIKI) ---
             item {
                 Button(
                     onClick = {
                         // 1. Logout Firebase
                         FirebaseAuth.getInstance().signOut()
+                        // (Baris 'auth.signOut()' dihapus karena duplikat dan variabel 'auth' tidak ada)
 
-                        // 2. Kembali ke Login & Hapus History
+                        // 2. Bersihkan state user agar data tidak tertukar
+                        dietViewModel.clearUserData()
+
+                        // 3. Kembali ke Login & Hapus History Backstack
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                         }

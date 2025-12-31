@@ -36,10 +36,12 @@ fun DietProgramScreen(
     val state by viewModel.state.collectAsState()
     val cvdAvailable by viewModel.cvdDataAvailable.collectAsState()
 
-    // --- TAMBAHAN UNTUK FIX BUG ---
+    // --- PERBAIKAN STATE & LOGIKA REDIRECT ---
     val dietProgress by viewModel.dietProgress.collectAsState()
     val isLoadingProgress by viewModel.isLoadingProgress.collectAsState()
-    var isCheckingStatus by remember { mutableStateOf(true) }
+
+    // State lokal untuk menandakan apakah proses cek user diet sudah selesai
+    var hasCheckedStatus by remember { mutableStateOf(false) }
 
     // 1. Cek status diet saat layar dibuka
     LaunchedEffect(Unit) {
@@ -49,20 +51,19 @@ fun DietProgramScreen(
     // 2. Pantau hasil pengecekan (Redirect jika ada diet aktif)
     LaunchedEffect(dietProgress, isLoadingProgress) {
         if (!isLoadingProgress) {
+            // Jika ada data diet yang VALID & BELUM SELESAI -> Redirect
             if (dietProgress != null && !dietProgress!!.isCompleted) {
-                // User punya diet aktif & belum selesai -> Lempar ke Tracker
                 val activeDietId = dietProgress!!.dietId
                 navController.navigate("diet_start/$activeDietId") {
-                    // Hapus halaman form ini dari backstack agar kalau di-back tidak balik ke form
                     popUpTo("diet_program") { inclusive = true }
                 }
             } else {
-                // Tidak ada diet aktif, tampilkan form
-                isCheckingStatus = false
+                // Jika tidak ada diet aktif, tandai bahwa pengecekan selesai
+                hasCheckedStatus = true
             }
         }
     }
-    // --- END TAMBAHAN ---
+    // --- END PERBAIKAN ---
 
     var showInfo by remember { mutableStateOf(false) }
 
@@ -109,8 +110,11 @@ fun DietProgramScreen(
             )
         }
     ) { padding ->
-        // Jika sedang loading pengecekan, tampilkan Loading Spinner saja
-        if (isCheckingStatus || isLoadingProgress) {
+        // LOGIKA TAMPILAN:
+        // Tampilkan Loading jika:
+        // 1. ViewModel sedang loading data
+        // 2. ATAU kita belum selesai melakukan pengecekan logika (hasCheckedStatus == false)
+        if (isLoadingProgress || !hasCheckedStatus) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -120,7 +124,7 @@ fun DietProgramScreen(
                 CircularProgressIndicator(color = pinkMain)
             }
         } else {
-            // Jika tidak ada diet aktif, TAMPILKAN FORM SOAL
+            // TAMPILKAN FORM HANYA JIKA SUDAH DIPASTIKAN TIDAK ADA DIET AKTIF
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -297,9 +301,7 @@ fun DietProgramScreen(
     }
 }
 
-// --- Helper Components TETAP SAMA seperti sebelumnya ---
-// (DietQuestionCard, SelectionOption, DietCVDSelectionCard tidak perlu diubah,
-// pastikan saja tercopy di bawah sini seperti file aslinya)
+// --- Helper Components ---
 
 @Composable
 fun DietQuestionCard(
