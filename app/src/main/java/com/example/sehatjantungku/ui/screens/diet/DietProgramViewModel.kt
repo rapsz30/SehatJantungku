@@ -479,7 +479,7 @@ class DietProgramViewModel : ViewModel() {
 
     suspend fun generateGeminiAnalysis(dietName: String): String {
         return try {
-            generativeModel.generateContent("Singkat: Mengapa $dietName cocok untuk data saya: ${state.value}").text ?: "Cocok."
+            generativeModel.generateContent("Jelaskan secara singkat dalam 1-2 paragraf Mengapa $dietName cocok untuk data saya: ${state.value}").text ?: "Cocok."
         } catch (e: Exception) { "Rekomendasi terbaik." }
     }
 }
