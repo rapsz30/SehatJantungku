@@ -9,10 +9,8 @@ import com.example.sehatjantungku.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
-    // Inisialisasi Repository dengan Lazy agar lebih aman
     private val repository by lazy { AuthRepository() }
 
-    // State UI
     var isLoading by mutableStateOf(false)
         private set
 
@@ -77,24 +75,21 @@ class AuthViewModel : ViewModel() {
             isLoading = true
             errorMessage = null
             isSuccess = false
-
-            Log.d("AuthViewModel", "Mencoba ganti password...")
             val result = repository.updatePassword(currentPass, newPass)
-
             isLoading = false
-            if (result.isSuccess) {
-                Log.d("AuthViewModel", "Password Berhasil diganti")
-                isSuccess = true
-            } else {
-                val error = result.exceptionOrNull()?.message ?: "Gagal mengganti password"
-                Log.e("AuthViewModel", "Gagal ganti password: $error")
-                errorMessage = error
-            }
+            if (result.isSuccess) isSuccess = true else errorMessage = result.exceptionOrNull()?.message
         }
     }
 
     fun clearStatus() {
         errorMessage = null
         isSuccess = false
+    }
+
+    // [PERBAIKAN] Tambahkan fungsi ini untuk menghapus data saat Logout
+    fun clearUserData() {
+        userData = null
+        clearStatus()
+        Log.d("AuthViewModel", "User data cleared")
     }
 }

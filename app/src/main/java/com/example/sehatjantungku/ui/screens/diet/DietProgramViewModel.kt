@@ -14,6 +14,30 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+
+// --- MODEL DATA DIUPDATE ---
+data class UserDietProgress(
+    val userId: String = "",
+    val dietId: String = "",
+    val dietName: String = "",
+    val currentDay: Int = 1,
+    val tasks: Map<String, Boolean> = mapOf(
+        "sarapan" to false, "siang" to false, "malam" to false, "camilan" to false, "air" to false
+    ),
+    val lastUpdated: Long = System.currentTimeMillis(),
+
+    // Field baru untuk mencatat tanggal terakhir submit (Format: yyyy-MM-dd)
+    val lastLogDate: String = "",
+
+    @get:PropertyName("isCompleted")
+    val isCompleted: Boolean = false,
+
+    val currentStreak: Int = 0
+)
 
 // State Input Form
 data class DietProgramState(
@@ -35,26 +59,21 @@ data class CalculationResult(
     val scores: Map<String, Double>
 )
 
-// Model Data Progress User
-data class UserDietProgress(
-    val userId: String = "",
-    val dietId: String = "",
-    val dietName: String = "",
-    val currentDay: Int = 1,
-    val tasks: Map<String, Boolean> = mapOf(
-        "sarapan" to false, "siang" to false, "malam" to false, "camilan" to false, "air" to false
-    ),
-    val lastUpdated: Long = System.currentTimeMillis(),
-
-    @get:PropertyName("isCompleted")
-    val isCompleted: Boolean = false
-)
-
 // Model Badge
 data class EarnedBadge(
     val id: String = "",
     val name: String = "",
     val dateEarned: Long = 0
+)
+
+// Model Notifikasi untuk disimpan ke Firestore (Agar terbaca di NotificationsScreen)
+data class InAppNotificationData(
+    val title: String,
+    val message: String,
+    val time: String,
+    val type: String, // ACHIEVEMENT, INFO, dll
+    val isRead: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis()
 )
 
 class DietProgramViewModel : ViewModel() {
@@ -88,7 +107,7 @@ class DietProgramViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val generativeModel = GenerativeModel(
-        modelName = "gemini-1.5-flash", // Pastikan model name sesuai
+        modelName = "gemini-2.5-flash",
         apiKey = BuildConfig.GEMINI_API_KEY
     )
 
@@ -96,17 +115,59 @@ class DietProgramViewModel : ViewModel() {
         checkLatestCVDData()
     }
 
+    // Helper Tanggal & Waktu
+    private fun getTodayDate(): String {
+        return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    }
+
+    private fun getCurrentTime(): String {
+        return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+    }
+
     // ==========================================
-    // 1. DATA DIET PLAN & PROGRESS (PERBAIKAN UTAMA)
+    // 1. DATA DIET PLAN & PROGRESS
     // ==========================================
 
-    // Panggil fungsi ini saat User Logout agar data tidak tertinggal di memori
-    fun clearUserData() {
-        _state.value = DietProgramState() // Reset Form Input
-        _dietProgress.value = null        // Reset Progress
+    fun resetData() {
+        _dietProgress.value = null
+        _state.value = DietProgramState()
         _cvdDataAvailable.value = false
-        _userBadges.value = emptyList()
         _fetchedDietPlan.value = null
+        _userBadges.value = emptyList()
+        _isLoadingProgress.value = false
+    }
+
+    fun loadUserDietProgress() {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            resetData()
+            return
+        }
+        val userId = currentUser.uid
+
+        viewModelScope.launch {
+            _isLoadingProgress.value = true
+            _dietProgress.value = null
+
+            try {
+                val doc = db.collection("users").document(userId)
+                    .collection("diet_program").document("active_diet")
+                    .get().await()
+
+                if (doc.exists()) {
+                    val progress = doc.toObject(UserDietProgress::class.java)
+                    _dietProgress.value = progress
+                } else {
+                    _dietProgress.value = null
+                }
+                checkLatestCVDData()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _dietProgress.value = null
+            } finally {
+                _isLoadingProgress.value = false
+            }
+        }
     }
 
     fun fetchDietPlanFromFirebase(dietId: String) {
@@ -122,50 +183,18 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    fun loadUserDietProgress() {
-        val userId = auth.currentUser?.uid
-
-        // Validasi: Jika tidak ada user login, reset semuanya
-        if (userId == null) {
-            _dietProgress.value = null
-            _isLoadingProgress.value = false
-            return
-        }
-
-        viewModelScope.launch {
-            _isLoadingProgress.value = true
-
-            // [PENTING] Reset data lama dulu agar UI tidak membaca data User sebelumnya
-            _dietProgress.value = null
-
-            try {
-                val doc = db.collection("users").document(userId)
-                    .collection("diet_program").document("active_diet")
-                    .get().await()
-
-                if (doc.exists()) {
-                    val progress = doc.toObject(UserDietProgress::class.java)
-                    // Validasi ganda: Pastikan data milik user yg sedang login
-                    if (progress != null && progress.userId == userId) {
-                        _dietProgress.value = progress
-                    } else {
-                        _dietProgress.value = null
-                    }
-                } else {
-                    _dietProgress.value = null
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _dietProgress.value = null
-            } finally {
-                _isLoadingProgress.value = false
-            }
-        }
-    }
-
     fun startNewDiet(dietId: String, dietName: String, onSuccess: () -> Unit) {
         val userId = auth.currentUser?.uid ?: return
-        val newProgress = UserDietProgress(userId = userId, dietId = dietId, dietName = dietName, currentDay = 1, isCompleted = false)
+        // Diet baru dimulai, streak 0, lastLogDate kosong
+        val newProgress = UserDietProgress(
+            userId = userId,
+            dietId = dietId,
+            dietName = dietName,
+            currentDay = 1,
+            isCompleted = false,
+            currentStreak = 0,
+            lastLogDate = ""
+        )
         viewModelScope.launch {
             try {
                 db.collection("users").document(userId)
@@ -184,15 +213,56 @@ class DietProgramViewModel : ViewModel() {
                 db.collection("users").document(userId)
                     .collection("diet_program").document("active_diet")
                     .update("tasks", updatedTasks, "lastUpdated", System.currentTimeMillis()).await()
+
                 _dietProgress.value = _dietProgress.value?.copy(tasks = updatedTasks)
                 onSuccess()
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
-    fun completeDay(maxDays: Int, onSuccess: () -> Unit, onFinished: () -> Unit) {
+    // --- FUNGSI UTAMA: COMPLETE DAY + STREAK + NOTIFIKASI ---
+    fun completeDay(maxDays: Int, onSuccess: () -> Unit, onFinished: () -> Unit, onError: (String) -> Unit = {}) {
         val userId = auth.currentUser?.uid ?: return
         val current = _dietProgress.value ?: return
+
+        val todayDate = getTodayDate()
+
+        // 1. Validasi: Apakah sudah submit hari ini?
+        if (current.lastLogDate == todayDate) {
+            onError("Kamu sudah menyelesaikan target hari ini. Kembali lagi besok ya!")
+            return
+        }
+
+        // 2. Hitung Streak
+        var newStreak = current.currentStreak
+        val lastDateString = current.lastLogDate
+
+        if (lastDateString.isNotEmpty()) {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            try {
+                val lastDate = sdf.parse(lastDateString)
+                val today = sdf.parse(todayDate)
+
+                if (lastDate != null && today != null) {
+                    val diffInMillis = today.time - lastDate.time
+                    val diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMillis)
+
+                    if (diffInDays == 1L) {
+                        // Jika selisih 1 hari (berturut-turut), streak bertambah
+                        newStreak += 1
+                    } else if (diffInDays > 1L) {
+                        // Jika bolong lebih dari 1 hari, reset streak jadi 1
+                        newStreak = 1
+                    }
+                    // Jika 0 hari, tertahan di validasi no. 1
+                }
+            } catch (e: Exception) {
+                newStreak = 1 // Fallback jika error parsing
+            }
+        } else {
+            newStreak = 1 // Hari pertama submit
+        }
+
         val nextDay = current.currentDay + 1
 
         viewModelScope.launch {
@@ -201,25 +271,78 @@ class DietProgramViewModel : ViewModel() {
                     // --- DIET SELESAI ---
                     db.collection("users").document(userId)
                         .collection("diet_program").document("active_diet")
-                        .update("isCompleted", true).await()
+                        .update(
+                            "isCompleted", true,
+                            "lastLogDate", todayDate,
+                            "lastUpdated", System.currentTimeMillis()
+                        ).await()
 
                     saveEarnedBadge(current.dietId, current.dietName)
 
-                    // Update local state isCompleted = true
-                    _dietProgress.value = current.copy(isCompleted = true)
+                    // Simpan Notifikasi
+                    saveInAppNotification(
+                        userId,
+                        "Program Selesai! \uD83C\uDF89", // Judul
+                        "Selamat! Anda menamatkan program ${current.dietName}.", // Pesan
+                        "ACHIEVEMENT" // Tipe
+                    )
 
+                    _dietProgress.value = current.copy(isCompleted = true, lastLogDate = todayDate)
                     onFinished()
+
                 } else {
-                    // Lanjut Hari Berikutnya
+                    // --- LANJUT HARI BERIKUTNYA ---
                     val emptyTasks = mapOf("sarapan" to false, "siang" to false, "malam" to false, "camilan" to false, "air" to false)
+
                     db.collection("users").document(userId)
                         .collection("diet_program").document("active_diet")
-                        .update("currentDay", nextDay, "tasks", emptyTasks, "lastUpdated", System.currentTimeMillis()).await()
-                    _dietProgress.value = current.copy(currentDay = nextDay, tasks = emptyTasks)
+                        .update(
+                            "currentDay", nextDay,
+                            "tasks", emptyTasks,
+                            "lastUpdated", System.currentTimeMillis(),
+                            "currentStreak", newStreak,
+                            "lastLogDate", todayDate // Simpan tanggal hari ini
+                        ).await()
+
+                    // Simpan Notifikasi Progress
+                    saveInAppNotification(
+                        userId,
+                        "Hari ke-${current.currentDay} Selesai \uD83D\uDD25",
+                        "Hebat! Streak Anda kini $newStreak hari. Pertahankan!",
+                        "ACHIEVEMENT"
+                    )
+
+                    _dietProgress.value = current.copy(
+                        currentDay = nextDay,
+                        tasks = emptyTasks,
+                        currentStreak = newStreak,
+                        lastLogDate = todayDate
+                    )
                     onSuccess()
                 }
-            } catch (e: Exception) { e.printStackTrace() }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onError("Gagal menyimpan progress. Cek koneksi internet.")
+            }
         }
+    }
+
+    // Fungsi menyimpan notifikasi ke sub-collection user
+    private suspend fun saveInAppNotification(userId: String, title: String, message: String, type: String) {
+        val notif = InAppNotificationData(
+            title = title,
+            message = message,
+            time = getCurrentTime(),
+            type = type,
+            isRead = false,
+            timestamp = System.currentTimeMillis()
+        )
+        try {
+            db.collection("users").document(userId)
+                .collection("notifications")
+                .add(notif)
+                .await()
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     fun stopCurrentDiet(onSuccess: () -> Unit) {
@@ -241,28 +364,26 @@ class DietProgramViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val emptyTasks = mapOf(
-                    "sarapan" to false, "siang" to false, "malam" to false,
-                    "camilan" to false, "air" to false
-                )
+                val emptyTasks = mapOf("sarapan" to false, "siang" to false, "malam" to false, "camilan" to false, "air" to false)
 
-                // 1. Update Firestore
                 db.collection("users").document(userId)
                     .collection("diet_program").document("active_diet")
                     .update(
                         "currentDay", 1,
                         "isCompleted", false,
                         "tasks", emptyTasks,
-                        "lastUpdated", System.currentTimeMillis()
-                    )
-                    .await()
+                        "lastUpdated", System.currentTimeMillis(),
+                        "currentStreak", 0,
+                        "lastLogDate", "" // Reset tanggal
+                    ).await()
 
-                // 2. Update Local State
                 _dietProgress.value = current.copy(
                     currentDay = 1,
                     isCompleted = false,
                     tasks = emptyTasks,
-                    lastUpdated = System.currentTimeMillis()
+                    lastUpdated = System.currentTimeMillis(),
+                    currentStreak = 0,
+                    lastLogDate = ""
                 )
 
                 delay(500)
