@@ -40,9 +40,12 @@ fun EditProfileScreen(navController: NavController) {
             db.collection("users").document(uid).get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
-                        fullName = document.getString("fullName") ?: ""
-                        phoneNumber = document.getString("phoneNumber") ?: ""
+                        fullName = document.getString("name") ?: ""
+                        phoneNumber = document.getString("phone") ?: ""
                     }
+                }
+                .addOnFailureListener {
+                    Toast.makeText(context, "Gagal memuat profil", Toast.LENGTH_SHORT).show()
                 }
         }
     }
@@ -104,16 +107,18 @@ fun EditProfileScreen(navController: NavController) {
                         return@Button
                     }
                     isLoading = true
+
                     val updates = mapOf(
-                        "fullName" to fullName,
-                        "phoneNumber" to phoneNumber
+                        "name" to fullName,
+                        "phone" to phoneNumber
                     )
+
                     user?.uid?.let { uid ->
                         db.collection("users").document(uid).update(updates)
                             .addOnSuccessListener {
                                 isLoading = false
                                 Toast.makeText(context, "Profil diperbarui!", Toast.LENGTH_SHORT).show()
-                                navController.popBackStack() // Kembali setelah simpan
+                                navController.popBackStack()
                             }
                             .addOnFailureListener {
                                 isLoading = false
