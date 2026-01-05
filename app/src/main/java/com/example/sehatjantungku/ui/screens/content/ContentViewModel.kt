@@ -11,7 +11,6 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 class ContentViewModel : ViewModel() {
-    // WAJIB: Menggunakan URL region Singapore agar tidak ditolak server
     private val database = FirebaseDatabase.getInstance("https://sehatjantungku-d8e98-default-rtdb.asia-southeast1.firebasedatabase.app")
         .getReference("articles")
 
@@ -33,7 +32,6 @@ class ContentViewModel : ViewModel() {
                 if (snapshot.exists()) {
                     for (data in snapshot.children) {
                         try {
-                            // Mapping manual untuk mencegah crash jika tipe data JSON tidak sinkron
                             val article = Article(
                                 id = data.child("id").getValue(String::class.java) ?: "",
                                 title = data.child("title").getValue(String::class.java) ?: "",
@@ -51,7 +49,7 @@ class ContentViewModel : ViewModel() {
                     }
                 }
                 _articles.value = list
-                _isLoading.value = false // Berhenti loading di sini
+                _isLoading.value = false
             }
 
             override fun onCancelled(error: DatabaseError) {

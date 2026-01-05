@@ -35,8 +35,6 @@ fun ContentScreen(
     val articles by viewModel.articles
     val isLoading by viewModel.isLoading
     var searchQuery by remember { mutableStateOf("") }
-
-    // Filter artikel berdasarkan search query
     val filteredArticles = articles.filter {
         it.title.contains(searchQuery, ignoreCase = true) ||
                 it.description.contains(searchQuery, ignoreCase = true)
@@ -46,14 +44,14 @@ fun ContentScreen(
         bottomBar = {
             BottomNavBar(navController = navController, currentRoute = "content")
         },
-        containerColor = Color(0xFFFAFAFA) // Background senada dengan HomeScreen
+        containerColor = Color(0xFFFAFAFA)
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // --- HEADER & SEARCH BAR ---
+            // HEADER & SEARCH BAR
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -68,7 +66,6 @@ fun ContentScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Search Bar Modern
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -86,7 +83,7 @@ fun ContentScreen(
                 )
             }
 
-            // --- LIST CONTENT ---
+            //  LIST CONTENT
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = PinkMain)
@@ -94,7 +91,7 @@ fun ContentScreen(
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp) // Jarak konsisten 12.dp
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (filteredArticles.isEmpty()) {
                         item {
@@ -112,7 +109,6 @@ fun ContentScreen(
                             }
                         }
                     }
-                    // Spacer bawah agar tidak ketutup navbar
                     item { Spacer(modifier = Modifier.height(10.dp)) }
                 }
             }
@@ -126,17 +122,16 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .shadow(2.dp, RoundedCornerShape(12.dp)), // Shadow halus
+            .shadow(2.dp, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(0.dp) // Elevation di-handle oleh shadow
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
             modifier = Modifier
                 .padding(12.dp)
-                .height(90.dp) // Tinggi sedikit diperbesar agar lega
+                .height(90.dp)
         ) {
-            // Gambar Artikel
             AsyncImage(
                 model = article.imageUrl,
                 contentDescription = null,
@@ -150,12 +145,10 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            // Teks Artikel
             Column(
                 modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Center
             ) {
-                // Kategori atau Tanggal (Opsional, pemanis)
                 Text(
                     text = if(article.readTime.isNotEmpty()) article.readTime else "Kesehatan Jantung",
                     fontSize = 10.sp,
