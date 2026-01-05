@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,6 +41,7 @@ fun CVDResultScreen(
     viewModel: CVDRiskViewModel = viewModel()
 ) {
     val saveStatus by viewModel.saveStatus.collectAsState()
+    val recommendationState by viewModel.recommendationState.collectAsState() // Observe Rekomendasi AI
 
     // --- Parsing Data ---
     val risks = remember(riskScoresString) {
@@ -62,8 +64,13 @@ fun CVDResultScreen(
     // Effect untuk menangani status penyimpanan
     LaunchedEffect(saveStatus) {
         if (saveStatus is SaveStatus.Success) {
-            // Optional: Tampilkan Toast atau biarkan Dialog muncul (di bawah)
+            // Optional: Toast handled below
         }
+    }
+
+    // Effect untuk memanggil Gemini saat layar dibuka
+    LaunchedEffect(Unit) {
+        viewModel.fetchRecommendation(heartAge, userRiskPercent)
     }
 
     Scaffold(
@@ -203,33 +210,65 @@ fun CVDResultScreen(
                 }
             }
 
-            // 3. Recommendation Section
+            // 3. Recommendation Section (AI POWERED)
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Rekomendasi Kesehatan",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1F2937)
-                        )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Saran Kesehatan (AI)",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1F2937)
+                            )
+                        }
+                        // Tombol refresh jika error
+                        if (recommendationState is RecommendationState.Error) {
+                            IconButton(onClick = { viewModel.fetchRecommendation(heartAge, userRiskPercent) }) {
+                                Icon(Icons.Default.Refresh, "Refresh", tint = Color.Gray)
+                            }
+                        }
                     }
                     Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF3F4F6))
 
-                    val recommendations = getRecommendations(userRiskPercent)
-                    recommendations.forEach { text ->
-                        Row(
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Text("•", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(end = 8.dp))
-                            Text(text, fontSize = 14.sp, color = Color(0xFF4B5563), lineHeight = 20.sp)
+                    // UI berdasarkan State Rekomendasi
+                    when (val state = recommendationState) {
+                        is RecommendationState.Idle, is RecommendationState.Loading -> {
+                            Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    CircularProgressIndicator(modifier = Modifier.size(32.dp), color = Color(0xFF3B82F6))
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("Sedang menganalisis...", fontSize = 12.sp, color = Color.Gray)
+                                }
+                            }
+                        }
+                        is RecommendationState.Error -> {
+                            Text(
+                                text = "Gagal memuat rekomendasi: ${(state).message}",
+                                color = Color.Red,
+                                fontSize = 14.sp
+                            )
+                        }
+                        is RecommendationState.Success -> {
+                            state.recommendations.forEach { text ->
+                                Row(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Text("•", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(end = 8.dp))
+                                    Text(text, fontSize = 14.sp, color = Color(0xFF4B5563), lineHeight = 20.sp)
+                                }
+                            }
                         }
                     }
                 }
@@ -322,36 +361,5 @@ fun RiskBarItem(
                     .background(color)
             )
         }
-    }
-}
-
-fun getRecommendations(riskPercent: Float): List<String> {
-    return when {
-        riskPercent < 5 -> listOf(
-            "Pertahankan pola hidup sehat Anda saat ini.",
-            "Lakukan check-up kesehatan rutin setidaknya setahun sekali.",
-            "Tetap aktif berolahraga minimal 150 menit per minggu.",
-            "Jaga pola makan seimbang dengan perbanyak sayur dan buah."
-        )
-        riskPercent < 10 -> listOf(
-            "Tingkatkan aktivitas fisik menjadi rutin 30 menit setiap hari.",
-            "Kurangi konsumsi garam, gula, dan lemak jenuh.",
-            "Pantau tekanan darah Anda secara mandiri atau di klinik.",
-            "Pertimbangkan konsultasi dokter untuk evaluasi faktor risiko."
-        )
-        riskPercent < 20 -> listOf(
-            "Segera konsultasi dengan dokter jantung untuk pemeriksaan lanjut.",
-            "Wajib menurunkan berat badan jika berlebih (obesitas).",
-            "Hindari makanan cepat saji dan tinggi kolesterol sepenuhnya.",
-            "Kelola stres dengan baik (yoga, meditasi, atau hobi).",
-            "Cek profil lipid (kolesterol) darah Anda segera."
-        )
-        else -> listOf(
-            "SANGAT DISARANKAN konsultasi ke dokter spesialis jantung SEGERA.",
-            "Lakukan pemeriksaan EKG dan Treadmill test.",
-            "Ubah gaya hidup secara drastis (berhenti merokok total).",
-            "Ikuti program diet jantung sehat yang ketat.",
-            "Patuhi jadwal minum obat jika sudah diresepkan dokter."
-        )
     }
 }
