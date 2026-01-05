@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Locale // IMPORT BARU: Untuk format angka (titik vs koma)
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.pow
@@ -57,13 +58,15 @@ class CVDRiskViewModel : ViewModel() {
     fun updateHypertension(value: Boolean) { _state.value = _state.value.copy(hypertension = value) }
 
     fun calculateBMI() {
-        val hInput = _state.value.height.toDoubleOrNull() ?: 0.0
-        val w = _state.value.weight.toDoubleOrNull() ?: 0.0
+        // PERBAIKAN: Handle input koma dan konversi aman
+        val hInput = _state.value.height.replace(",", ".").toDoubleOrNull() ?: 0.0
+        val w = _state.value.weight.replace(",", ".").toDoubleOrNull() ?: 0.0
 
         if (hInput > 0 && w > 0) {
             val h = if (hInput > 3.0) hInput / 100.0 else hInput
             val bmi = w / (h * h)
-            _state.value = _state.value.copy(bmi = String.format("%.2f", bmi))
+            // PERBAIKAN: Gunakan Locale.US agar hasilnya selalu pakai titik (misal 22.50)
+            _state.value = _state.value.copy(bmi = String.format(Locale.US, "%.2f", bmi))
         } else {
             _state.value = _state.value.copy(bmi = "")
         }
@@ -133,9 +136,11 @@ class CVDRiskViewModel : ViewModel() {
 
     fun calculateRisk(): Pair<String, Int> {
         val s = _state.value
-        val age = s.age.toDoubleOrNull() ?: 0.0
-        val sbp = s.bloodPressure.toDoubleOrNull() ?: 0.0
-        val bmi = s.bmi.toDoubleOrNull() ?: 0.0
+
+        // PERBAIKAN: Ganti koma dengan titik sebelum parsing ke Double
+        val age = s.age.replace(",", ".").toDoubleOrNull() ?: 0.0
+        val sbp = s.bloodPressure.replace(",", ".").toDoubleOrNull() ?: 0.0
+        val bmi = s.bmi.replace(",", ".").toDoubleOrNull() ?: 0.0
         val isMale = s.gender == "Pria"
 
         if (age <= 0 || sbp <= 0 || bmi <= 0 || s.gender.isEmpty()) {
@@ -148,7 +153,8 @@ class CVDRiskViewModel : ViewModel() {
         val normalRisk = calculateNormalRisk(isMale)
         val heartAge = calculateHeartAgeExact(isMale, userRisk)
 
-        val riskString = String.format("%.6f,%.6f,%.6f", userRisk, optimalRisk, normalRisk)
+        // Gunakan Locale.US agar output string dipisahkan titik (untuk konsistensi)
+        val riskString = String.format(Locale.US, "%.6f,%.6f,%.6f", userRisk, optimalRisk, normalRisk)
         return Pair(riskString, heartAge)
     }
 
@@ -159,7 +165,9 @@ class CVDRiskViewModel : ViewModel() {
         viewModelScope.launch {
             _recommendationState.value = RecommendationState.Loading
             try {
-                val realAge = _state.value.age.toIntOrNull() ?: 30 // Fallback default jika kosong
+                // Handle juga jika umur ada koma, ambil bagian integer saja
+                val cleanAge = _state.value.age.replace(",", ".").toDoubleOrNull()?.toInt()
+                val realAge = cleanAge ?: 30 // Fallback default jika kosong
 
                 // 1. Kategori Skor Risiko
                 val riskCategory = when {
@@ -181,7 +189,7 @@ class CVDRiskViewModel : ViewModel() {
                     
                     - Umur Asli: $realAge tahun
                     - Umur Jantung: $heartAge tahun ($heartAgeCategory)
-                    - Risiko CVD: ${String.format("%.1f", userRiskPercent)}% ($riskCategory)
+                    - Risiko CVD: ${String.format(Locale.US, "%.1f", userRiskPercent)}% ($riskCategory)
                     
                     Instruksi Format:
                     - Berikan HANYA daftar rekomendasi dalam format poin-poin.
