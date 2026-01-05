@@ -26,7 +26,7 @@ class AuthViewModel : ViewModel() {
         Log.d("AuthViewModel", "ViewModel berhasil dibuat")
     }
 
-    // --- Login ---
+    // Login
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             isLoading = true
@@ -37,7 +37,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // --- Register ---
+    // Register
     fun register(name: String, email: String, phone: String, pass: String, birthDate: String) {
         viewModelScope.launch {
             isLoading = true
@@ -48,7 +48,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // --- Forgot Password ---
+    // Forgot Password
     fun forgotPassword(email: String) {
         viewModelScope.launch {
             isLoading = true
@@ -59,7 +59,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // --- Fetch Profile ---
+    // Fetch Profile
     fun fetchUserProfile() {
         viewModelScope.launch {
             isLoading = true
@@ -69,7 +69,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // --- Ganti Password ---
+    //  Ganti Password
     fun changePassword(currentPass: String, newPass: String) {
         viewModelScope.launch {
             isLoading = true
@@ -86,7 +86,7 @@ class AuthViewModel : ViewModel() {
         isSuccess = false
     }
 
-    // [PERBAIKAN] Tambahkan fungsi ini untuk menghapus data saat Logout
+    // menghapus data saat Logout
     fun clearUserData() {
         userData = null
         clearStatus()

@@ -1,9 +1,11 @@
 package com.example.sehatjantungku.ui.screens.diet
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sehatjantungku.BuildConfig
 import com.example.sehatjantungku.data.model.DietPlan
+import com.example.sehatjantungku.utils.DietNotificationHelper // Pastikan import ini ada
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -19,7 +21,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-// --- MODEL DATA DIUPDATE ---
+// --- MODEL DATA (TIDAK BERUBAH) ---
 data class UserDietProgress(
     val userId: String = "",
     val dietId: String = "",
@@ -29,17 +31,12 @@ data class UserDietProgress(
         "sarapan" to false, "siang" to false, "malam" to false, "camilan" to false, "air" to false
     ),
     val lastUpdated: Long = System.currentTimeMillis(),
-
-    // Field baru untuk mencatat tanggal terakhir submit (Format: yyyy-MM-dd)
-    val lastLogDate: String = "",
-
+    val lastLogDate: String = "", // Format: yyyy-MM-dd
     @get:PropertyName("isCompleted")
     val isCompleted: Boolean = false,
-
     val currentStreak: Int = 0
 )
 
-// State Input Form
 data class DietProgramState(
     val bloodPressure: String = "",
     val cholesterol: String = "",
@@ -52,26 +49,23 @@ data class DietProgramState(
     val cvdRiskCategory: String = ""
 )
 
-// Hasil Perhitungan SAW
 data class CalculationResult(
     val bestDietId: String,
     val bestDietName: String,
     val scores: Map<String, Double>
 )
 
-// Model Badge
 data class EarnedBadge(
     val id: String = "",
     val name: String = "",
     val dateEarned: Long = 0
 )
 
-// Model Notifikasi untuk disimpan ke Firestore (Agar terbaca di NotificationsScreen)
 data class InAppNotificationData(
     val title: String,
     val message: String,
     val time: String,
-    val type: String, // ACHIEVEMENT, INFO, dll
+    val type: String,
     val isRead: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )
@@ -183,9 +177,10 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    fun startNewDiet(dietId: String, dietName: String, onSuccess: () -> Unit) {
+    // --- UPDATED: MENERIMA CONTEXT UNTUK NOTIFIKASI ---
+    fun startNewDiet(dietId: String, dietName: String, context: Context, onSuccess: () -> Unit) {
         val userId = auth.currentUser?.uid ?: return
-        // Diet baru dimulai, streak 0, lastLogDate kosong
+
         val newProgress = UserDietProgress(
             userId = userId,
             dietId = dietId,
@@ -195,11 +190,22 @@ class DietProgramViewModel : ViewModel() {
             currentStreak = 0,
             lastLogDate = ""
         )
+
         viewModelScope.launch {
             try {
+                // 1. Simpan ke Firestore
                 db.collection("users").document(userId)
                     .collection("diet_program").document("active_diet")
                     .set(newProgress).await()
+
+                // 2. [BARU] Jadwalkan Notifikasi (Alarm)
+                // Kita gunakan data dari _fetchedDietPlan yang (seharusnya) sudah dimuat di layar sebelumnya
+                val currentPlan = _fetchedDietPlan.value
+                if (currentPlan != null) {
+                    val helper = DietNotificationHelper(context)
+                    helper.scheduleDietPlan(currentPlan)
+                }
+
                 _dietProgress.value = newProgress
                 onSuccess()
             } catch (e: Exception) { e.printStackTrace() }
@@ -220,20 +226,18 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // --- FUNGSI UTAMA: COMPLETE DAY + STREAK + NOTIFIKASI ---
+    // --- COMPLETE DAY + STREAK (TIDAK BERUBAH) ---
     fun completeDay(maxDays: Int, onSuccess: () -> Unit, onFinished: () -> Unit, onError: (String) -> Unit = {}) {
         val userId = auth.currentUser?.uid ?: return
         val current = _dietProgress.value ?: return
 
         val todayDate = getTodayDate()
 
-        // 1. Validasi: Apakah sudah submit hari ini?
         if (current.lastLogDate == todayDate) {
             onError("Kamu sudah menyelesaikan target hari ini. Kembali lagi besok ya!")
             return
         }
 
-        // 2. Hitung Streak
         var newStreak = current.currentStreak
         val lastDateString = current.lastLogDate
 
@@ -248,19 +252,16 @@ class DietProgramViewModel : ViewModel() {
                     val diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMillis)
 
                     if (diffInDays == 1L) {
-                        // Jika selisih 1 hari (berturut-turut), streak bertambah
                         newStreak += 1
                     } else if (diffInDays > 1L) {
-                        // Jika bolong lebih dari 1 hari, reset streak jadi 1
                         newStreak = 1
                     }
-                    // Jika 0 hari, tertahan di validasi no. 1
                 }
             } catch (e: Exception) {
-                newStreak = 1 // Fallback jika error parsing
+                newStreak = 1
             }
         } else {
-            newStreak = 1 // Hari pertama submit
+            newStreak = 1
         }
 
         val nextDay = current.currentDay + 1
@@ -268,7 +269,7 @@ class DietProgramViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 if (current.currentDay >= maxDays) {
-                    // --- DIET SELESAI ---
+                    // SELESAI
                     db.collection("users").document(userId)
                         .collection("diet_program").document("active_diet")
                         .update(
@@ -279,19 +280,18 @@ class DietProgramViewModel : ViewModel() {
 
                     saveEarnedBadge(current.dietId, current.dietName)
 
-                    // Simpan Notifikasi
                     saveInAppNotification(
                         userId,
-                        "Program Selesai! \uD83C\uDF89", // Judul
-                        "Selamat! Anda menamatkan program ${current.dietName}.", // Pesan
-                        "ACHIEVEMENT" // Tipe
+                        "Program Selesai! \uD83C\uDF89",
+                        "Selamat! Anda menamatkan program ${current.dietName}.",
+                        "ACHIEVEMENT"
                     )
 
                     _dietProgress.value = current.copy(isCompleted = true, lastLogDate = todayDate)
                     onFinished()
 
                 } else {
-                    // --- LANJUT HARI BERIKUTNYA ---
+                    // LANJUT NEXT DAY
                     val emptyTasks = mapOf("sarapan" to false, "siang" to false, "malam" to false, "camilan" to false, "air" to false)
 
                     db.collection("users").document(userId)
@@ -301,10 +301,9 @@ class DietProgramViewModel : ViewModel() {
                             "tasks", emptyTasks,
                             "lastUpdated", System.currentTimeMillis(),
                             "currentStreak", newStreak,
-                            "lastLogDate", todayDate // Simpan tanggal hari ini
+                            "lastLogDate", todayDate
                         ).await()
 
-                    // Simpan Notifikasi Progress
                     saveInAppNotification(
                         userId,
                         "Hari ke-${current.currentDay} Selesai \uD83D\uDD25",
@@ -327,7 +326,6 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // Fungsi menyimpan notifikasi ke sub-collection user
     private suspend fun saveInAppNotification(userId: String, title: String, message: String, type: String) {
         val notif = InAppNotificationData(
             title = title,
@@ -345,13 +343,20 @@ class DietProgramViewModel : ViewModel() {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    fun stopCurrentDiet(onSuccess: () -> Unit) {
+    // --- UPDATED: MENERIMA CONTEXT UNTUK STOP NOTIFIKASI ---
+    fun stopCurrentDiet(context: Context, onSuccess: () -> Unit) {
         val userId = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
+                // 1. Hapus dari Firestore
                 db.collection("users").document(userId)
                     .collection("diet_program").document("active_diet")
                     .delete().await()
+
+                // 2. [BARU] Matikan semua alarm
+                val helper = DietNotificationHelper(context)
+                helper.cancelAllAlarms()
+
                 _dietProgress.value = null
                 onSuccess()
             } catch (e: Exception) { e.printStackTrace() }
@@ -374,7 +379,7 @@ class DietProgramViewModel : ViewModel() {
                         "tasks", emptyTasks,
                         "lastUpdated", System.currentTimeMillis(),
                         "currentStreak", 0,
-                        "lastLogDate", "" // Reset tanggal
+                        "lastLogDate", ""
                     ).await()
 
                 _dietProgress.value = current.copy(
@@ -393,7 +398,7 @@ class DietProgramViewModel : ViewModel() {
     }
 
     // ==========================================
-    // 2. BADGE SYSTEM
+    // 2. BADGE & CVD (TIDAK BERUBAH)
     // ==========================================
     private suspend fun saveEarnedBadge(dietId: String, dietName: String) {
         val userId = auth.currentUser?.uid ?: return
@@ -414,9 +419,6 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // ==========================================
-    // 3. CVD & SAW
-    // ==========================================
     private fun checkLatestCVDData() {
         val userId = auth.currentUser?.uid ?: return
         viewModelScope.launch {
@@ -436,7 +438,7 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // Update Functions
+    // Form Update Functions
     fun updateBloodPressure(v: String) { _state.value = _state.value.copy(bloodPressure = v) }
     fun updateCholesterol(v: String) { _state.value = _state.value.copy(cholesterol = v) }
     fun updateFoodPreference(v: String) { _state.value = _state.value.copy(foodPreference = v) }

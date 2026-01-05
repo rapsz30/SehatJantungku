@@ -10,7 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     /*Kelompok:
-     * Anggota: Afifuddin Mahfud (23523076)
+     * Anggota: Afifuddin Mahfud         (23523076)
      *          Ahmad Khatami Rafsanjani (23523095)
      *          Azhartama Zuhal Budiazka (23523026)
      *          Mohamad Rafi Hendryansah (23523064)

@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext // Penting: Tambahkan import ini
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,6 +26,9 @@ fun DietResultScreen(
     dietId: String,
     sharedViewModel: DietProgramViewModel
 ) {
+    // 1. Ambil Context di sini
+    val context = LocalContext.current
+
     val dietData by sharedViewModel.fetchedDietPlan.collectAsState()
     val isLoading by sharedViewModel.isLoadingPlan.collectAsState()
 
@@ -124,11 +128,13 @@ fun DietResultScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
                         onClick = {
-                            // Konversi diet.id (Int) ke String untuk disimpan dan navigasi
                             val dietIdStr = diet.id.toString()
+
+                            // 2. Kirim context ke ViewModel
                             sharedViewModel.startNewDiet(
                                 dietId = dietIdStr,
                                 dietName = diet.dietName,
+                                context = context, // <-- PERBAIKAN DI SINI
                                 onSuccess = {
                                     navController.navigate("diet_start/$dietIdStr") {
                                         popUpTo("diet_result") { inclusive = true }

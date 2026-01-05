@@ -105,7 +105,7 @@ fun DietStartScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.stopCurrentDiet {
+                        viewModel.stopCurrentDiet(context) {
                             showStopDialog = false
                             Toast.makeText(context, "Program diet dihapus", Toast.LENGTH_SHORT).show()
                             navController.navigate("diet_program") {
