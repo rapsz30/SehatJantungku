@@ -58,7 +58,7 @@ com.example.sehatjantungku
 🚀 Cara Instalasi
 Ikuti langkah ini untuk menjalankan proyek di komputer lokal Anda:
 1. Clone Repository
-git clone [https://github.com/username-anda/SehatJantungku.git](https://github.com/username-anda/SehatJantungku.git)
+git clone https://github.com/rapsz30/SehatJantungku.git
 
 2. Setup Firebase
  - Buat proyek baru di Firebase Console.
