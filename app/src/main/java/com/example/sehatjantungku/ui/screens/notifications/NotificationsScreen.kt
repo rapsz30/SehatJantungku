@@ -32,7 +32,7 @@ enum class NotificationType {
 }
 
 data class Notification(
-    val id: String, // ID dokumen Firestore
+    val id: String,
     val title: String,
     val message: String,
     val time: String,
@@ -48,6 +48,9 @@ fun NotificationsScreen(navController: NavController) {
     var notifications by remember { mutableStateOf<List<Notification>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
+    // State untuk konfirmasi hapus (opsional, tapi bagus untuk UX)
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     // Load Data Real-time dari Firestore
     LaunchedEffect(Unit) {
         val db = FirebaseFirestore.getInstance()
@@ -56,7 +59,7 @@ fun NotificationsScreen(navController: NavController) {
         if (userId != null) {
             db.collection("users").document(userId)
                 .collection("notifications")
-                .orderBy("timestamp", Query.Direction.DESCENDING) // Urutkan dari yang terbaru
+                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshot, e ->
                     if (e != null) {
                         isLoading = false
@@ -65,7 +68,6 @@ fun NotificationsScreen(navController: NavController) {
 
                     if (snapshot != null) {
                         val fetchedList = snapshot.documents.map { doc ->
-                            // Mapping tipe string dari Firestore ke Enum
                             val typeString = doc.getString("type") ?: "INFO"
                             val typeEnum = try {
                                 NotificationType.valueOf(typeString)
@@ -92,17 +94,49 @@ fun NotificationsScreen(navController: NavController) {
         }
     }
 
-    // Fungsi untuk menghapus notifikasi dari Firestore
-    fun deleteNotification(notificationId: String) {
+    // Fungsi menghapus SEMUA notifikasi
+    fun deleteAllNotifications() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val db = FirebaseFirestore.getInstance()
+        val ref = db.collection("users").document(userId).collection("notifications")
 
-        db.collection("users").document(userId)
-            .collection("notifications").document(notificationId)
-            .delete()
-            .addOnFailureListener { e ->
-                e.printStackTrace()
+        // Ambil semua dokumen dulu, lalu hapus via batch
+        ref.get().addOnSuccessListener { snapshot ->
+            if (!snapshot.isEmpty) {
+                val batch = db.batch()
+                for (doc in snapshot.documents) {
+                    batch.delete(doc.reference)
+                }
+                batch.commit().addOnFailureListener { e ->
+                    e.printStackTrace()
+                }
             }
+        }
+    }
+
+    // Dialog Konfirmasi Hapus
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Hapus Semua Notifikasi?") },
+            text = { Text("Tindakan ini tidak dapat dibatalkan. Semua riwayat notifikasi akan hilang.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        deleteAllNotifications()
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("Hapus")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -118,7 +152,19 @@ fun NotificationsScreen(navController: NavController) {
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White,
                     titleContentColor = Color.Black
-                )
+                ),
+                actions = {
+                    // Tombol Hapus Semua hanya muncul jika list tidak kosong
+                    if (notifications.isNotEmpty()) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Hapus Semua",
+                                tint = Color.Red
+                            )
+                        }
+                    }
+                }
             )
         },
         bottomBar = {
@@ -132,7 +178,7 @@ fun NotificationsScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF9FAFB)) // Background abu-abu muda
+                .background(Color(0xFFF9FAFB))
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
@@ -165,10 +211,7 @@ fun NotificationsScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(notifications, key = { it.id }) { notification ->
-                        NotificationItem(
-                            notification = notification,
-                            onDelete = { deleteNotification(notification.id) }
-                        )
+                        NotificationItem(notification)
                     }
                 }
             }
@@ -177,17 +220,14 @@ fun NotificationsScreen(navController: NavController) {
 }
 
 @Composable
-fun NotificationItem(
-    notification: Notification,
-    onDelete: () -> Unit // Callback untuk delete
-) {
+fun NotificationItem(notification: Notification) {
     // Tentukan Warna & Ikon berdasarkan Tipe
     val (icon, iconColor, bgColor) = when (notification.type) {
-        NotificationType.REMINDER -> Triple(Icons.Default.Alarm, Color(0xFFFF9800), Color(0xFFFFF3E0)) // Oranye
-        NotificationType.ARTICLE -> Triple(Icons.Default.Article, Color(0xFF2196F3), Color(0xFFE3F2FD)) // Biru
-        NotificationType.CHECKUP -> Triple(Icons.Default.MedicalServices, Color(0xFFF44336), Color(0xFFFFEBEE)) // Merah
-        NotificationType.ACHIEVEMENT -> Triple(Icons.Default.EmojiEvents, Color(0xFFFFC107), Color(0xFFFFF8E1)) // Kuning Emas
-        NotificationType.INFO -> Triple(Icons.Default.Info, Color(0xFF9E9E9E), Color(0xFFF5F5F5)) // Abu-abu
+        NotificationType.REMINDER -> Triple(Icons.Default.Alarm, Color(0xFFFF9800), Color(0xFFFFF3E0))
+        NotificationType.ARTICLE -> Triple(Icons.Default.Article, Color(0xFF2196F3), Color(0xFFE3F2FD))
+        NotificationType.CHECKUP -> Triple(Icons.Default.MedicalServices, Color(0xFFF44336), Color(0xFFFFEBEE))
+        NotificationType.ACHIEVEMENT -> Triple(Icons.Default.EmojiEvents, Color(0xFFFFC107), Color(0xFFFFF8E1))
+        NotificationType.INFO -> Triple(Icons.Default.Info, Color(0xFF9E9E9E), Color(0xFFF5F5F5))
     }
 
     Card(
@@ -254,15 +294,6 @@ fun NotificationItem(
                     lineHeight = 18.sp,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // --- TOMBOL DELETE ---
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Hapus Notifikasi",
-                    tint = Color.LightGray
                 )
             }
         }
