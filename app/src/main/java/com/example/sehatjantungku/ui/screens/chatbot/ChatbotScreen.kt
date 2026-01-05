@@ -39,10 +39,8 @@ fun ChatbotScreen(
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    // Warna Background Layar
     val bgLight = Color(0xFFFAFAFA)
 
-    // Auto-scroll ke bawah saat ada pesan baru
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -51,7 +49,6 @@ fun ChatbotScreen(
 
     Scaffold(
         topBar = {
-            // [PERBAIKAN] Header disamakan dengan Diet/CVD (Gradient)
             TopAppBar(
                 title = {
                     Column {
@@ -64,7 +61,7 @@ fun ChatbotScreen(
                         Text(
                             "AI Support System",
                             fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.8f) // Teks Putih Transparan
+                            color = Color.White.copy(alpha = 0.8f) 
                         )
                     }
                 },
@@ -73,15 +70,14 @@ fun ChatbotScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White // Icon Putih
+                            tint = Color.White 
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent // Transparan agar gradasi terlihat
+                    containerColor = Color.Transparent 
                 ),
                 modifier = Modifier.background(
-                    // Gradasi yang sama dengan DietProgramScreen
                     Brush.horizontalGradient(
                         colors = listOf(Color(0xFFFF8CCF), Color(0xFFCC7CF0))
                     )
@@ -95,9 +91,9 @@ fun ChatbotScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // --- DISCLAIMER BANNER ---
+            // DISCLAIMER BANNER
             Surface(
-                color = Color(0xFFFFF4E5), // Oranye muda
+                color = Color(0xFFFFF4E5),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -115,7 +111,7 @@ fun ChatbotScreen(
                 }
             }
 
-            // --- LIST PESAN ---
+            // LIST PESAN
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -129,7 +125,7 @@ fun ChatbotScreen(
                 }
             }
 
-            // --- INPUT AREA (Floating Style) ---
+            //  INPUT AREA
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -237,7 +233,7 @@ fun ChatBubble(message: ChatMessage) {
     }
 }
 
-// --- FUNGSI FORMATTING (Bold & Bullet) ---
+//  FORMATTING
 @Composable
 fun formatMessage(text: String): androidx.compose.ui.text.AnnotatedString {
     return buildAnnotatedString {

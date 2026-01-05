@@ -37,14 +37,11 @@ class ChatbotViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // Chat Session agar AI ingat konteks percakapan
     private var chatSession: com.google.ai.client.generativeai.Chat? = null
 
-    // Context String (Data User)
     private var userContextInfo = "Data Pengguna: Belum dimuat."
 
     init {
-        // Load data dulu, baru inisialisasi AI dengan konteks data tersebut
         viewModelScope.launch {
             fetchUserHealthContext()
             initializeGeminiChat()
@@ -58,13 +55,11 @@ class ChatbotViewModel : ViewModel() {
         var dietInfo = "Belum mengikuti program diet."
 
         try {
-            // Ambil CVD Terakhir
             val cvdSnapshot = db.collection("cvd_history")
                 .whereEqualTo("userId", userId)
                 .get().await()
 
             if (!cvdSnapshot.isEmpty) {
-                // Cari yang tanggalnya paling baru (manual sort jika query index belum ada)
                 val latest = cvdSnapshot.documents.maxByOrNull { it.getTimestamp("date")?.seconds ?: 0L }
                 latest?.let {
                     val score = it.getDouble("userRiskScore") ?: 0.0
@@ -113,7 +108,7 @@ class ChatbotViewModel : ViewModel() {
                 apiKey = apiKey
             )
 
-            // 2. Setting "Otak" / Persona Chatbot (System Instruction)
+            // 2. Setting Persona Chatbot
             val systemInstruction = """
                 Kamu adalah Asisten Kesehatan Jantung untuk aplikasi 'SehatJantungku'.
                 
@@ -131,7 +126,6 @@ class ChatbotViewModel : ViewModel() {
                 6. Jawablah dengan empatik, suportif, dan berbasis data medis umum yang valid.
             """.trimIndent()
 
-            // Inisialisasi History Chat dengan System Instruction di awal
             chatSession = generativeModel.startChat(
                 history = listOf(
                     content(role = "user") { text(systemInstruction) },
@@ -147,13 +141,11 @@ class ChatbotViewModel : ViewModel() {
     fun sendMessage(userMessage: String) {
         if (userMessage.isBlank()) return
 
-        // Update UI: Pesan User
         val currentList = _messages.value.toMutableList()
         currentList.add(ChatMessage(userMessage, isUser = true))
         _messages.value = currentList
 
         if (chatSession == null) {
-            // Coba init ulang jika null (misal internet putus di awal)
             viewModelScope.launch {
                 initializeGeminiChat()
                 if (chatSession == null) {
@@ -170,15 +162,12 @@ class ChatbotViewModel : ViewModel() {
     private fun processResponse(message: String) {
         viewModelScope.launch {
             try {
-                // Loading indicator
                 val loadingMsg = ChatMessage("Sedang menganalisis...", isUser = false)
                 _messages.value = _messages.value + loadingMsg
 
-                // Kirim pesan ke Chat Session (History otomatis tersimpan)
                 val response = chatSession!!.sendMessage(message)
                 val responseText = response.text ?: "Maaf, saya tidak mengerti."
 
-                // Hapus loading, masukkan jawaban
                 _messages.value = _messages.value.dropLast(1) + ChatMessage(responseText, isUser = false)
 
             } catch (e: Exception) {

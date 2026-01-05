@@ -8,24 +8,24 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
-// --- Import Screen Auth ---
+//  Import Screen Auth 
 import com.example.sehatjantungku.ui.screens.auth.LoginScreen
 import com.example.sehatjantungku.ui.screens.auth.RegisterScreen
 import com.example.sehatjantungku.ui.screens.auth.ForgotPasswordScreen
 
-// --- Import Screen Utama ---
+//  Import Screen Utama 
 import com.example.sehatjantungku.ui.screens.home.HomeScreen
 import com.example.sehatjantungku.ui.screens.content.ContentScreen
 import com.example.sehatjantungku.ui.screens.settings.SettingsScreen
 import com.example.sehatjantungku.ui.screens.profile.ProfileScreen
 import com.example.sehatjantungku.ui.screens.notifications.NotificationsScreen
 
-// --- Import Fitur ---
+//  Import Fitur 
 import com.example.sehatjantungku.ui.screens.chatbot.ChatbotScreen
 import com.example.sehatjantungku.ui.screens.cvdrisk.CVDRiskScreen
 import com.example.sehatjantungku.ui.screens.cvdrisk.CVDResultScreen
 
-// --- Import Fitur Diet & ViewModel ---
+//  Import Fitur Diet & ViewModel 
 import com.example.sehatjantungku.ui.screens.diet.DietProgramScreen
 import com.example.sehatjantungku.ui.screens.diet.DietResultScreen
 import com.example.sehatjantungku.ui.screens.diet.DietStartScreen
@@ -33,41 +33,41 @@ import com.example.sehatjantungku.ui.screens.diet.DietCompletionScreen
 import com.example.sehatjantungku.ui.screens.diet.DietProgramViewModel // Import ViewModel Diet
 import com.example.sehatjantungku.ui.screens.content.ArticleDetailScreen
 
-// --- Import Settings Sub-Menu ---
+//  Import Settings Sub-Menu 
 import com.example.sehatjantungku.ui.screens.settings.AccountSettingScreen
 import com.example.sehatjantungku.ui.screens.settings.PasswordChangeScreen
 import com.example.sehatjantungku.ui.screens.settings.LanguageScreen
 import com.example.sehatjantungku.ui.screens.settings.HelpCenterScreen
+import com.example.sehatjantungku.ui.screens.settings.EditProfileScreen // PERBAIKAN: Import EditProfileScreen
 
 @Composable
 fun SehatJantungkuNavigation(
     startDestination: String = "login"
 ) {
     val navController = rememberNavController()
-
-    // [PENTING] Inisialisasi ViewModel di level ini agar bisa dishare antar screen
+    // Inisialisasi ViewModel
     val dietViewModel: DietProgramViewModel = viewModel()
 
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
-        // --- AUTH ROUTES ---
+        //  AUTH ROUTES 
         composable("login") { LoginScreen(navController) }
         composable("register") { RegisterScreen(navController) }
         composable("forgot_password") { ForgotPasswordScreen(navController) }
 
-        // --- MAIN ROUTES ---
+        //  MAIN ROUTES 
         composable("home") { HomeScreen(navController) }
         composable("content") { ContentScreen(navController) }
         composable("settings") { SettingsScreen(navController) }
         composable("profile") { ProfileScreen(navController) }
         composable("notifications") { NotificationsScreen(navController) }
 
-        // --- FITUR: CHATBOT ---
+        //  FITUR: CHATBOT 
         composable("chatbot") { ChatbotScreen(navController) }
 
-        // --- FITUR: CVD RISK ---
+        //  FITUR: CVD RISK 
         composable("cvd_risk") { CVDRiskScreen(navController) }
         composable(
             route = "cvd_risk_result/{riskScoresString}/{heartAge}",
@@ -81,7 +81,7 @@ fun SehatJantungkuNavigation(
             CVDResultScreen(navController, heartAge, riskScoresString)
         }
 
-        // --- FITUR: DIET PROGRAM ---
+        //  FITUR: DIET PROGRAM 
 
         // 1. Screen Form Personalisasi
         composable("diet_program") {
@@ -101,14 +101,12 @@ fun SehatJantungkuNavigation(
             DietResultScreen(navController, dietId, dietViewModel)
         }
 
-        // 3. Screen Mulai Diet (Tracker) - [YANG DIPERBAIKI]
+        // 3. Screen Mulai Diet (Tracker)
         composable(
             route = "diet_start/{dietId}",
             arguments = listOf(navArgument("dietId") { type = NavType.StringType })
         ) { backStackEntry ->
             val dietId = backStackEntry.arguments?.getString("dietId") ?: "1"
-
-            // PERBAIKAN: Tambahkan parameter dietViewModel di sini
             DietStartScreen(navController, dietId, dietViewModel)
         }
 
@@ -116,7 +114,7 @@ fun SehatJantungkuNavigation(
             DietCompletionScreen(navController)
         }
 
-        // --- ARTIKEL DETAIL ---
+        //  ARTIKEL DETAIL 
         composable(
             route = "article_detail/{articleId}",
             arguments = listOf(navArgument("articleId") { type = NavType.StringType })
@@ -125,10 +123,13 @@ fun SehatJantungkuNavigation(
             ArticleDetailScreen(navController, articleId)
         }
 
-        // --- SETTINGS SUB-MENUS ---
+        //  SETTINGS SUB-MENUS 
         composable("settings/account") { AccountSettingScreen(navController) }
         composable("settings/password") { PasswordChangeScreen(navController) }
         composable("settings/language") { LanguageScreen(navController) }
         composable("settings/help") { HelpCenterScreen(navController) }
+
+        // PERBAIKAN: Menambahkan rute edit_profile
+        composable("edit_profile") { EditProfileScreen(navController) }
     }
 }

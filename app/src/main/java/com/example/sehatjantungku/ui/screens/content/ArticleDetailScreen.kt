@@ -89,7 +89,7 @@ fun ArticleDetailScreen(
                     .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
-                // --- GAMBAR HEADER ---
+                // GAMBAR HEADER
                 AsyncImage(
                     model = item.imageUrl,
                     contentDescription = null,
@@ -99,9 +99,8 @@ fun ArticleDetailScreen(
                     contentScale = ContentScale.Crop
                 )
 
-                // --- KONTEN TEKS ---
+                // KONTEN TEKS
                 Column(modifier = Modifier.padding(24.dp)) {
-                    // Tag / Kategori
                     Surface(
                         color = PinkMain.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(8.dp)
@@ -117,7 +116,7 @@ fun ArticleDetailScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Judul Besar
+                    // Judul
                     Text(
                         text = item.title,
                         fontSize = 22.sp,
@@ -128,7 +127,7 @@ fun ArticleDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Info Metadata (Penulis & Tanggal)
+                    // Info Penulis & Tanggal
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         MetaInfo(Icons.Default.Person, item.author)
                         Spacer(modifier = Modifier.width(16.dp))
@@ -160,7 +159,7 @@ fun ArticleDetailScreen(
     }
 }
 
-// Komponen Kecil untuk Metadata
+// Komponen Kecil
 @Composable
 fun MetaInfo(icon: ImageVector, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {

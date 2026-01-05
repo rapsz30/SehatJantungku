@@ -32,15 +32,12 @@ fun DietProgramScreen(
     val pinkMain = Color(0xFFFF6FB1)
     val bgGray = Color(0xFFF9FAFB)
 
-    // State dari ViewModel
     val state by viewModel.state.collectAsState()
     val cvdAvailable by viewModel.cvdDataAvailable.collectAsState()
 
-    // --- PERBAIKAN STATE & LOGIKA REDIRECT ---
     val dietProgress by viewModel.dietProgress.collectAsState()
     val isLoadingProgress by viewModel.isLoadingProgress.collectAsState()
 
-    // State lokal untuk menandakan apakah proses cek user diet sudah selesai
     var hasCheckedStatus by remember { mutableStateOf(false) }
 
     // 1. Cek status diet saat layar dibuka
@@ -51,33 +48,57 @@ fun DietProgramScreen(
     // 2. Pantau hasil pengecekan (Redirect jika ada diet aktif)
     LaunchedEffect(dietProgress, isLoadingProgress) {
         if (!isLoadingProgress) {
-            // Jika ada data diet yang VALID & BELUM SELESAI -> Redirect
             if (dietProgress != null && !dietProgress!!.isCompleted) {
                 val activeDietId = dietProgress!!.dietId
                 navController.navigate("diet_start/$activeDietId") {
                     popUpTo("diet_program") { inclusive = true }
                 }
             } else {
-                // Jika tidak ada diet aktif, tandai bahwa pengecekan selesai
                 hasCheckedStatus = true
             }
         }
     }
-    // --- END PERBAIKAN ---
 
     var showInfo by remember { mutableStateOf(false) }
 
-    // Dialog Info
     if (showInfo) {
         AlertDialog(
             onDismissRequest = { showInfo = false },
             icon = { Icon(Icons.Default.Info, null, tint = pinkMain) },
-            title = { Text("Panduan Pengisian", fontWeight = FontWeight.Bold) },
+            title = { Text("Metode Personalisasi", fontWeight = FontWeight.Bold) },
             text = {
-                Column {
-                    Text("📋 Pilih jawaban yang paling sesuai dengan kondisi Anda.")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("❤️ Jawaban yang jujur membantu kami menghitung skor kecocokan diet (SAW) yang akurat.")
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Sistem kami menggunakan metode SAW (Simple Additive Weighting) untuk merekomendasikan diet terbaik.",
+                        fontSize = 14.sp
+                    )
+
+                    HorizontalDivider(color = Color(0xFFEEEEEE))
+
+                    Column {
+                        Text("Faktor Penentu Utama:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        val points = listOf(
+                            "🫀 Skor Risiko Jantung (CVD Risk)",
+                            "🩸 Tekanan Darah & Kolesterol",
+                            "🥗 Preferensi Makanan & Gaya Hidup"
+                        )
+                        points.forEach { point ->
+                            Text(
+                                text = "• $point",
+                                fontSize = 13.sp,
+                                color = Color.DarkGray,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        "❤️ Jawaban yang jujur sangat penting untuk keamanan jantung Anda.",
+                        fontSize = 13.sp,
+                        color = pinkMain,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             },
             confirmButton = {
@@ -85,7 +106,8 @@ fun DietProgramScreen(
                     Text("Mengerti", color = pinkMain, fontWeight = FontWeight.Bold)
                 }
             },
-            containerColor = Color.White
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -110,10 +132,6 @@ fun DietProgramScreen(
             )
         }
     ) { padding ->
-        // LOGIKA TAMPILAN:
-        // Tampilkan Loading jika:
-        // 1. ViewModel sedang loading data
-        // 2. ATAU kita belum selesai melakukan pengecekan logika (hasCheckedStatus == false)
         if (isLoadingProgress || !hasCheckedStatus) {
             Box(
                 modifier = Modifier
@@ -124,7 +142,6 @@ fun DietProgramScreen(
                 CircularProgressIndicator(color = pinkMain)
             }
         } else {
-            // TAMPILKAN FORM HANYA JIKA SUDAH DIPASTIKAN TIDAK ADA DIET AKTIF
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -133,7 +150,6 @@ fun DietProgramScreen(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // Header Text
                 item {
                     Text(
                         "Lengkapi data berikut agar kami bisa memilihkan program diet yang paling efektif untuk jantung Anda.",
@@ -183,7 +199,7 @@ fun DietProgramScreen(
                     }
                 }
 
-                // Question 3 - Health Conditions (Multiple)
+                // Question 3 - Health Conditions
                 item {
                     DietQuestionCard(
                         number = "3",
@@ -265,7 +281,7 @@ fun DietProgramScreen(
                     }
                 }
 
-                // Question 7 - CVD Risk Consideration (Integrasi Firestore)
+                // Question 7 - CVD Risk Consideration
                 item {
                     DietCVDSelectionCard(
                         cvdAvailable = cvdAvailable,
@@ -275,12 +291,10 @@ fun DietProgramScreen(
                     )
                 }
 
-                // Submit Button
                 item {
                     Button(
                         onClick = {
                             val result = viewModel.calculateBestDiet()
-                            // Navigasi ke Result Screen membawa ID Diet terbaik
                             navController.navigate("diet_result/${result.bestDietId}")
                         },
                         modifier = Modifier
@@ -301,7 +315,6 @@ fun DietProgramScreen(
     }
 }
 
-// --- Helper Components ---
 
 @Composable
 fun DietQuestionCard(

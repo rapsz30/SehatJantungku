@@ -25,8 +25,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
-// --- DATA MODEL & ENUM ---
-
 enum class NotificationType {
     REMINDER, ARTICLE, CHECKUP, ACHIEVEMENT, INFO
 }
@@ -44,14 +42,11 @@ data class Notification(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(navController: NavController) {
-    // State untuk List Notifikasi
     var notifications by remember { mutableStateOf<List<Notification>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // State untuk konfirmasi hapus (opsional, tapi bagus untuk UX)
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Load Data Real-time dari Firestore
     LaunchedEffect(Unit) {
         val db = FirebaseFirestore.getInstance()
         val userId = FirebaseAuth.getInstance().currentUser?.uid
@@ -94,13 +89,11 @@ fun NotificationsScreen(navController: NavController) {
         }
     }
 
-    // Fungsi menghapus SEMUA notifikasi
     fun deleteAllNotifications() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val db = FirebaseFirestore.getInstance()
         val ref = db.collection("users").document(userId).collection("notifications")
 
-        // Ambil semua dokumen dulu, lalu hapus via batch
         ref.get().addOnSuccessListener { snapshot ->
             if (!snapshot.isEmpty) {
                 val batch = db.batch()
@@ -114,7 +107,6 @@ fun NotificationsScreen(navController: NavController) {
         }
     }
 
-    // Dialog Konfirmasi Hapus
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -154,7 +146,6 @@ fun NotificationsScreen(navController: NavController) {
                     titleContentColor = Color.Black
                 ),
                 actions = {
-                    // Tombol Hapus Semua hanya muncul jika list tidak kosong
                     if (notifications.isNotEmpty()) {
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
@@ -186,7 +177,6 @@ fun NotificationsScreen(navController: NavController) {
                     color = PinkMain
                 )
             } else if (notifications.isEmpty()) {
-                // Tampilan Kosong
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -205,7 +195,6 @@ fun NotificationsScreen(navController: NavController) {
                     )
                 }
             } else {
-                // List Notifikasi
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -221,7 +210,6 @@ fun NotificationsScreen(navController: NavController) {
 
 @Composable
 fun NotificationItem(notification: Notification) {
-    // Tentukan Warna & Ikon berdasarkan Tipe
     val (icon, iconColor, bgColor) = when (notification.type) {
         NotificationType.REMINDER -> Triple(Icons.Default.Alarm, Color(0xFFFF9800), Color(0xFFFFF3E0))
         NotificationType.ARTICLE -> Triple(Icons.Default.Article, Color(0xFF2196F3), Color(0xFFE3F2FD))
@@ -242,7 +230,6 @@ fun NotificationItem(notification: Notification) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // --- BAGIAN IKON ---
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -260,9 +247,7 @@ fun NotificationItem(notification: Notification) {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // --- BAGIAN TEKS ---
             Column(modifier = Modifier.weight(1f)) {
-                // Baris Judul & Waktu
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -285,8 +270,6 @@ fun NotificationItem(notification: Notification) {
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
-
-                // Pesan
                 Text(
                     text = notification.message,
                     fontSize = 13.sp,

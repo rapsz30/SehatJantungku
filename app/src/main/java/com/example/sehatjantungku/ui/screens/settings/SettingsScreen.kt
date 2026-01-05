@@ -61,8 +61,6 @@ fun SettingsScreen(
             item { SettingsItem(Icons.Default.Help, "Pusat Bantuan") { navController.navigate("settings/help") } }
 
             item { Spacer(modifier = Modifier.height(32.dp)) }
-
-            // --- TOMBOL LOGOUT ---
             item {
                 Button(
                     onClick = {

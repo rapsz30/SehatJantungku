@@ -24,7 +24,7 @@ import com.example.sehatjantungku.ui.viewmodel.AuthViewModel
 @Composable
 fun PasswordChangeScreen(
     navController: NavController,
-    authViewModel: AuthViewModel = viewModel() // Ini sering jadi penyebab crash jika library viewModel compose belum di-load
+    authViewModel: AuthViewModel = viewModel()
 ) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
@@ -39,7 +39,6 @@ fun PasswordChangeScreen(
     val isSuccess = authViewModel.isSuccess
     val errorMessage = authViewModel.errorMessage
 
-    // Handle Feedback Sukses/Gagal
     LaunchedEffect(isSuccess, errorMessage) {
         if (isSuccess) {
             Toast.makeText(context, "Password berhasil diubah!", Toast.LENGTH_SHORT).show()
@@ -72,7 +71,6 @@ fun PasswordChangeScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Field Password Lama
             OutlinedTextField(
                 value = currentPassword,
                 onValueChange = { currentPassword = it },
@@ -87,8 +85,6 @@ fun PasswordChangeScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Field Password Baru
             OutlinedTextField(
                 value = newPassword,
                 onValueChange = { newPassword = it },
@@ -104,7 +100,6 @@ fun PasswordChangeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Field Konfirmasi
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },

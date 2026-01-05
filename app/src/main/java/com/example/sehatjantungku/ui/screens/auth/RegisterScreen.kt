@@ -45,7 +45,6 @@ fun RegisterScreen(
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // Konfigurasi DatePickerDialog
     val datePickerDialog = DatePickerDialog(
         context,
         { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
@@ -109,7 +108,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Kolom Tanggal Lahir (Read Only agar memicu DatePicker)
             OutlinedTextField(
                 value = birthDate,
                 onValueChange = { },

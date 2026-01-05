@@ -32,14 +32,14 @@ fun ForgotPasswordScreen(
     val pinkColor = Color(0xFFFF6FB1)
     val purpleColor = Color(0xFFCC7CF0)
 
-    // Snackbar Host State untuk menampilkan pesan sukses/gagal
+    // untuk menampilkan pesan sukses/gagal
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Efek samping untuk menangani status keberhasilan dari ViewModel
+    // untuk menangani status keberhasilan dari ViewModel
     LaunchedEffect(viewModel.isSuccess) {
         if (viewModel.isSuccess) {
             snackbarHostState.showSnackbar("Link reset password telah dikirim ke email Anda.")
-            // Reset status di ViewModel agar tidak trigger berulang kali
+            // Reset status
             viewModel.isSuccess = false
         }
     }
@@ -106,7 +106,7 @@ fun ForgotPasswordScreen(
                 )
             )
 
-            // Menampilkan Pesan Error dari ViewModel jika ada
+            // Menampilkan Pesan Error
             viewModel.errorMessage?.let {
                 Text(
                     text = it,

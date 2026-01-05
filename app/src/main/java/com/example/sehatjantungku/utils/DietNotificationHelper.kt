@@ -18,7 +18,6 @@ class DietNotificationHelper(private val context: Context) {
         const val CHANNEL_ID = "diet_channel_id"
         const val CHANNEL_NAME = "Pengingat Jadwal Diet"
 
-        // Request Code unik untuk tiap waktu makan
         const val REQ_CODE_SARAPAN = 101
         const val REQ_CODE_SIANG = 102
         const val REQ_CODE_MALAM = 103
@@ -34,7 +33,7 @@ class DietNotificationHelper(private val context: Context) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_HIGH // PENTING: Agar muncul sebagai Floating Notification (Heads-up)
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifikasi untuk jadwal makan diet"
                 enableVibration(true)
@@ -50,7 +49,7 @@ class DietNotificationHelper(private val context: Context) {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // Untuk Android di bawah Oreo
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -59,22 +58,16 @@ class DietNotificationHelper(private val context: Context) {
         manager.notify(notificationId, builder.build())
     }
 
-    // Fungsi Utama untuk Menjadwalkan Semua Waktu Makan
     fun scheduleDietPlan(dietPlan: DietPlan) {
-        // Jadwalkan Sarapan
         scheduleAlarm(dietPlan.waktuSarapan, "Waktunya Sarapan!", "Menu: ${dietPlan.sarapanA}", REQ_CODE_SARAPAN)
 
-        // Jadwalkan Makan Siang
         scheduleAlarm(dietPlan.waktuMakanSiang, "Waktunya Makan Siang!", "Menu: ${dietPlan.makansiangA}", REQ_CODE_SIANG)
 
-        // Jadwalkan Makan Malam
         scheduleAlarm(dietPlan.waktuMakanMalam, "Waktunya Makan Malam!", "Menu: ${dietPlan.makanmalamA}", REQ_CODE_MALAM)
 
-        // Jadwalkan Camilan
         scheduleAlarm(dietPlan.waktuCamilan, "Waktunya Camilan Sehat!", "Menu: ${dietPlan.camilanA}", REQ_CODE_CAMILAN)
     }
 
-    // Fungsi Pembatalan Alarm (Panggil saat user berhenti diet)
     fun cancelAllAlarms() {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val codes = listOf(REQ_CODE_SARAPAN, REQ_CODE_SIANG, REQ_CODE_MALAM, REQ_CODE_CAMILAN)
@@ -126,7 +119,6 @@ class DietNotificationHelper(private val context: Context) {
 
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-            // Gunakan setExactAndAllowWhileIdle agar akurat meski HP dalam mode Doze
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 calendar.timeInMillis,

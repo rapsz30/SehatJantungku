@@ -15,15 +15,11 @@ import kotlinx.coroutines.flow.StateFlow
 class HomeViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
-    // 1. Gunakan Firestore untuk User (Karena Anda bilang ini sudah Work)
     private val firestore = FirebaseFirestore.getInstance()
 
-    // 2. Gunakan Realtime Database untuk Artikel (Sesuai ContentViewModel)
-    // URL ini WAJIB sama dengan yang ada di ContentViewModel
     private val realtimeDb = FirebaseDatabase.getInstance("https://sehatjantungku-d8e98-default-rtdb.asia-southeast1.firebasedatabase.app")
         .getReference("articles")
 
-    // State
     private val _userName = MutableStateFlow("Sobat Sehat")
     val userName: StateFlow<String> = _userName
 
@@ -35,7 +31,6 @@ class HomeViewModel : ViewModel() {
         fetchTopArticles()
     }
 
-    // --- Logic Ambil Nama User (Firestore) ---
     private fun fetchUserName() {
         val currentUser = auth.currentUser
         if (currentUser != null) {
@@ -54,7 +49,6 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    // --- Logic Ambil Top Article (Realtime Database) ---
     private fun fetchTopArticles() {
         val targetIds = listOf("1", "2", "3", "4")
 
@@ -64,12 +58,9 @@ class HomeViewModel : ViewModel() {
                 if (snapshot.exists()) {
                     for (data in snapshot.children) {
                         try {
-                            // Ambil ID dari data
                             val id = data.child("id").getValue(String::class.java) ?: ""
 
-                            // Cek apakah ID ini termasuk target (1-4)
                             if (id in targetIds) {
-                                // Mapping Manual (Sama persis seperti ContentViewModel)
                                 val article = Article(
                                     id = id,
                                     title = data.child("title").getValue(String::class.java) ?: "",
@@ -87,7 +78,6 @@ class HomeViewModel : ViewModel() {
                         }
                     }
                 }
-                // Update State, urutkan biar 1,2,3,4
                 _topArticles.value = list.sortedBy { it.id }
             }
 

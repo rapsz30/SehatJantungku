@@ -35,7 +35,6 @@ fun DietCompletionScreen(
     val pinkMain = Color(0xFFFF6FB1)
     val goldColor = Color(0xFFFFD700)
 
-    // Animasi Scale untuk Badge
     var startAnimation by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (startAnimation) 1f else 0.5f,
@@ -58,7 +57,6 @@ fun DietCompletionScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Header Text
             Text(
                 "LUAR BIASA!",
                 fontSize = 28.sp,
@@ -76,7 +74,6 @@ fun DietCompletionScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // ANIMATED BADGE
             Box(
                 modifier = Modifier
                     .scale(scale)
@@ -96,14 +93,12 @@ fun DietCompletionScreen(
                     modifier = Modifier.size(100.dp)
                 )
 
-                // Bintang hiasan
                 Icon(Icons.Default.Star, null, tint = pinkMain, modifier = Modifier.align(Alignment.TopEnd).offset((-20).dp, 20.dp).size(30.dp))
                 Icon(Icons.Default.Star, null, tint = pinkMain, modifier = Modifier.align(Alignment.BottomStart).offset(20.dp, (-20).dp).size(20.dp))
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Card Info
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF2F8)),
                 shape = RoundedCornerShape(16.dp),
@@ -130,15 +125,12 @@ fun DietCompletionScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // --- ACTION BUTTONS ---
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                // BUTTON 1: ULANGI DIET (RESET)
+                // ULANGI DIET (RESET)
                 OutlinedButton(
                     onClick = {
                         viewModel.repeatCurrentDiet { dietId ->
-                            // [PERBAIKAN] Clear stack sampai Home, baru masuk Tracker
-                            // Ini memastikan Tracker (DietStartScreen) dimuat ulang dari awal
                             navController.navigate("diet_start/$dietId") {
                                 popUpTo("home") { inclusive = false }
                             }
@@ -154,7 +146,7 @@ fun DietCompletionScreen(
                     Text("Ulangi Program Ini", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
 
-                // BUTTON 2: KEMBALI KE HOME (FINISH)
+                // KEMBALI KE HOME (FINISH)
                 Button(
                     onClick = {
                         navController.navigate("home") {

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sehatjantungku.BuildConfig
 import com.example.sehatjantungku.data.model.DietPlan
-import com.example.sehatjantungku.utils.DietNotificationHelper // Pastikan import ini ada
+import com.example.sehatjantungku.utils.DietNotificationHelper
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -19,9 +19,9 @@ import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit // Import wajib untuk hitung selisih hari
 
-// --- MODEL DATA (TIDAK BERUBAH) ---
+// MODEL DATA
 data class UserDietProgress(
     val userId: String = "",
     val dietId: String = "",
@@ -31,7 +31,7 @@ data class UserDietProgress(
         "sarapan" to false, "siang" to false, "malam" to false, "camilan" to false, "air" to false
     ),
     val lastUpdated: Long = System.currentTimeMillis(),
-    val lastLogDate: String = "", // Format: yyyy-MM-dd
+    val lastLogDate: String = "",
     @get:PropertyName("isCompleted")
     val isCompleted: Boolean = false,
     val currentStreak: Int = 0
@@ -72,32 +72,27 @@ data class InAppNotificationData(
 
 class DietProgramViewModel : ViewModel() {
 
-    // State Form & Logic
     private val _state = MutableStateFlow(DietProgramState())
     val state: StateFlow<DietProgramState> = _state.asStateFlow()
 
     private val _cvdDataAvailable = MutableStateFlow(false)
     val cvdDataAvailable: StateFlow<Boolean> = _cvdDataAvailable.asStateFlow()
 
-    // State Progress User
     private val _dietProgress = MutableStateFlow<UserDietProgress?>(null)
     val dietProgress: StateFlow<UserDietProgress?> = _dietProgress.asStateFlow()
 
     private val _isLoadingProgress = MutableStateFlow(true)
     val isLoadingProgress: StateFlow<Boolean> = _isLoadingProgress.asStateFlow()
 
-    // State Content Diet Plan
     private val _fetchedDietPlan = MutableStateFlow<DietPlan?>(null)
     val fetchedDietPlan: StateFlow<DietPlan?> = _fetchedDietPlan.asStateFlow()
 
     private val _isLoadingPlan = MutableStateFlow(false)
     val isLoadingPlan: StateFlow<Boolean> = _isLoadingPlan.asStateFlow()
 
-    // State Badge Profile
     private val _userBadges = MutableStateFlow<List<EarnedBadge>>(emptyList())
     val userBadges: StateFlow<List<EarnedBadge>> = _userBadges.asStateFlow()
 
-    // Firebase & Gemini
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val generativeModel = GenerativeModel(
@@ -109,7 +104,6 @@ class DietProgramViewModel : ViewModel() {
         checkLatestCVDData()
     }
 
-    // Helper Tanggal & Waktu
     private fun getTodayDate(): String {
         return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     }
@@ -118,10 +112,7 @@ class DietProgramViewModel : ViewModel() {
         return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
     }
 
-    // ==========================================
     // 1. DATA DIET PLAN & PROGRESS
-    // ==========================================
-
     fun resetData() {
         _dietProgress.value = null
         _state.value = DietProgramState()
@@ -150,7 +141,23 @@ class DietProgramViewModel : ViewModel() {
 
                 if (doc.exists()) {
                     val progress = doc.toObject(UserDietProgress::class.java)
-                    _dietProgress.value = progress
+
+                    if (progress != null && !progress.isCompleted) {
+                        if (isDietExpired(progress.lastLogDate)) {
+                            stopCurrentDietInternal(userId)
+                            _dietProgress.value = null
+                            saveInAppNotification(
+                                userId,
+                                "Diet Direset \uD83D\uDE22",
+                                "Anda tidak aktif selama lebih dari 3 hari. Program diet direset.",
+                                "SYSTEM"
+                            )
+                        } else {
+                            _dietProgress.value = progress
+                        }
+                    } else {
+                        _dietProgress.value = progress
+                    }
                 } else {
                     _dietProgress.value = null
                 }
@@ -161,6 +168,39 @@ class DietProgramViewModel : ViewModel() {
             } finally {
                 _isLoadingProgress.value = false
             }
+        }
+    }
+
+    // HITUNG SELISIH HARI
+    private fun isDietExpired(lastLogDateString: String): Boolean {
+        if (lastLogDateString.isEmpty()) return false
+
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val todayDate = getTodayDate()
+
+        return try {
+            val lastDate = sdf.parse(lastLogDateString)
+            val today = sdf.parse(todayDate)
+
+            if (lastDate != null && today != null) {
+                val diffInMillis = today.time - lastDate.time
+                val diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMillis)
+                diffInDays > 3
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun stopCurrentDietInternal(userId: String) {
+        try {
+            db.collection("users").document(userId)
+                .collection("diet_program").document("active_diet")
+                .delete().await()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -177,7 +217,6 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // --- UPDATED: MENERIMA CONTEXT UNTUK NOTIFIKASI ---
     fun startNewDiet(dietId: String, dietName: String, context: Context, onSuccess: () -> Unit) {
         val userId = auth.currentUser?.uid ?: return
 
@@ -198,8 +237,7 @@ class DietProgramViewModel : ViewModel() {
                     .collection("diet_program").document("active_diet")
                     .set(newProgress).await()
 
-                // 2. [BARU] Jadwalkan Notifikasi (Alarm)
-                // Kita gunakan data dari _fetchedDietPlan yang (seharusnya) sudah dimuat di layar sebelumnya
+                // 2. Jadwalkan Notifikasi
                 val currentPlan = _fetchedDietPlan.value
                 if (currentPlan != null) {
                     val helper = DietNotificationHelper(context)
@@ -226,7 +264,6 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // --- COMPLETE DAY + STREAK (TIDAK BERUBAH) ---
     fun completeDay(maxDays: Int, onSuccess: () -> Unit, onFinished: () -> Unit, onError: (String) -> Unit = {}) {
         val userId = auth.currentUser?.uid ?: return
         val current = _dietProgress.value ?: return
@@ -269,7 +306,6 @@ class DietProgramViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 if (current.currentDay >= maxDays) {
-                    // SELESAI
                     db.collection("users").document(userId)
                         .collection("diet_program").document("active_diet")
                         .update(
@@ -343,17 +379,14 @@ class DietProgramViewModel : ViewModel() {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // --- UPDATED: MENERIMA CONTEXT UNTUK STOP NOTIFIKASI ---
     fun stopCurrentDiet(context: Context, onSuccess: () -> Unit) {
         val userId = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
                 // 1. Hapus dari Firestore
-                db.collection("users").document(userId)
-                    .collection("diet_program").document("active_diet")
-                    .delete().await()
+                stopCurrentDietInternal(userId)
 
-                // 2. [BARU] Matikan semua alarm
+                // 2. Matikan semua alarm
                 val helper = DietNotificationHelper(context)
                 helper.cancelAllAlarms()
 
@@ -397,9 +430,7 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // ==========================================
-    // 2. BADGE & CVD (TIDAK BERUBAH)
-    // ==========================================
+    // 2. BADGE & CVD
     private suspend fun saveEarnedBadge(dietId: String, dietName: String) {
         val userId = auth.currentUser?.uid ?: return
         val badge = EarnedBadge(id = dietId, name = dietName, dateEarned = System.currentTimeMillis())
@@ -438,7 +469,6 @@ class DietProgramViewModel : ViewModel() {
         }
     }
 
-    // Form Update Functions
     fun updateBloodPressure(v: String) { _state.value = _state.value.copy(bloodPressure = v) }
     fun updateCholesterol(v: String) { _state.value = _state.value.copy(cholesterol = v) }
     fun updateFoodPreference(v: String) { _state.value = _state.value.copy(foodPreference = v) }

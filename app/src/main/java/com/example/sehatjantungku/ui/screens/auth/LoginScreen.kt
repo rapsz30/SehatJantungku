@@ -41,7 +41,7 @@ fun LoginScreen(
     val pinkColor = Color(0xFFFF6FB1)
     val purpleColor = Color(0xFFCC7CF0)
 
-    // Navigasi otomatis jika login berhasil
+    // jika login berhasil
     LaunchedEffect(viewModel.isSuccess) {
         if (viewModel.isSuccess) {
             navController.navigate("home") {

@@ -7,7 +7,6 @@ data class DietPlan(
     val waktuDiet: Int = 30,
     val aturanDiet: String = "",
 
-    // Menu & Waktu
     val sarapanA: String = "",
     val sarapanB: String = "",
     val sarapanC: String = "",

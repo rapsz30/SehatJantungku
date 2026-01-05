@@ -17,7 +17,6 @@ import kotlin.math.ln
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-// State untuk UI Rekomendasi
 sealed class RecommendationState {
     object Idle : RecommendationState()
     object Loading : RecommendationState()
@@ -45,11 +44,9 @@ class CVDRiskViewModel : ViewModel() {
     private val _saveStatus = MutableStateFlow<SaveStatus>(SaveStatus.Idle)
     val saveStatus: StateFlow<SaveStatus> = _saveStatus.asStateFlow()
 
-    // State untuk menampung hasil rekomendasi Gemini
     private val _recommendationState = MutableStateFlow<RecommendationState>(RecommendationState.Idle)
     val recommendationState: StateFlow<RecommendationState> = _recommendationState.asStateFlow()
 
-    // --- Update Functions ---
     fun updateGender(value: String) { _state.value = _state.value.copy(gender = value) }
     fun updateAge(value: String) { _state.value = _state.value.copy(age = value) }
     fun updateHeight(value: String) { _state.value = _state.value.copy(height = value) }
@@ -71,9 +68,6 @@ class CVDRiskViewModel : ViewModel() {
             _state.value = _state.value.copy(bmi = "")
         }
     }
-
-    // ... (Fungsi calculateSigmaBetaX, calculateRiskScore, OptimalRisk, NormalRisk, HeartAgeExact SAMA SEPERTI SEBELUMNYA - TIDAK DIUBAH) ...
-    // ... (Anda bisa menyalin fungsi-fungsi perhitungan matematika dari kode lama Anda di sini) ...
 
     private fun calculateSigmaBetaX(
         isMale: Boolean,
@@ -158,11 +152,8 @@ class CVDRiskViewModel : ViewModel() {
         return Pair(riskString, heartAge)
     }
 
-    // =========================================================================
-    // FITUR REKOMENDASI AI GEMINI (BARU)
-    // =========================================================================
+    // REKOMENDASI AI GEMINI
     fun fetchRecommendation(heartAge: Int, userRiskPercent: Float) {
-        // Jika sudah ada data sukses, tidak perlu fetch ulang (opsional)
         if (_recommendationState.value is RecommendationState.Success) return
 
         viewModelScope.launch {
@@ -207,7 +198,6 @@ class CVDRiskViewModel : ViewModel() {
                 val response = generativeModel.generateContent(prompt)
                 val rawText = response.text ?: ""
 
-                // Bersihkan output agar menjadi list string yang rapi
                 val recommendationList = rawText.split("\n")
                     .map { it.trim() }
                     .filter { it.isNotBlank() }
@@ -225,7 +215,7 @@ class CVDRiskViewModel : ViewModel() {
         }
     }
 
-    // --- Firebase Save ---
+    // Firebase Save
     fun saveToFirebase(heartAge: Int, userRisk: Double, category: String) {
         viewModelScope.launch {
             _saveStatus.value = SaveStatus.Loading

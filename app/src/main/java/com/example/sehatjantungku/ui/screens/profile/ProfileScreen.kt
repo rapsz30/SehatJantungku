@@ -35,19 +35,18 @@ import com.example.sehatjantungku.ui.screens.diet.DietProgramViewModel // Import
 fun ProfileScreen(
     navController: NavController,
     authViewModel: AuthViewModel = viewModel(),
-    dietViewModel: DietProgramViewModel = viewModel() // Tambahan ViewModel untuk Badge
+    dietViewModel: DietProgramViewModel = viewModel()
 ) {
     val pinkMain = Color(0xFFFF6FB1)
     val purpleLight = Color(0xFFCC7CF0)
 
-    // Load Data
     LaunchedEffect(Unit) {
         authViewModel.fetchUserProfile()
-        dietViewModel.fetchUserBadges() // Load Badge User
+        dietViewModel.fetchUserBadges()
     }
 
     val user = authViewModel.userData
-    val userBadges by dietViewModel.userBadges.collectAsState() // Observe Badge State
+    val userBadges by dietViewModel.userBadges.collectAsState()
 
     Scaffold(
         topBar = {
@@ -69,7 +68,6 @@ fun ProfileScreen(
                 .background(Color(0xFFF8F8F8)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- HEADER ---
             item {
                 Box(
                     modifier = Modifier
@@ -107,13 +105,12 @@ fun ProfileScreen(
                 }
             }
 
-            // --- KARTU INFORMASI PRIBADI ---
             item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
-                        .offset(y = (-20).dp), // Efek overlapping ke atas
+                        .offset(y = (-20).dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -138,7 +135,6 @@ fun ProfileScreen(
                 }
             }
 
-            // --- SECTION PENCAPAIAN & LENCANA (BADGES) ---
             item {
                 Column(
                     modifier = Modifier
@@ -154,7 +150,6 @@ fun ProfileScreen(
                     )
 
                     if (userBadges.isEmpty()) {
-                        // Tampilan Kosong
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -178,12 +173,10 @@ fun ProfileScreen(
                             }
                         }
                     } else {
-                        // Tampilan Grid Badge
-                        // Catatan: Karena LazyVerticalGrid ada di dalam LazyColumn, kita beri height fix
                         LazyVerticalGrid(
-                            columns = GridCells.Fixed(3), // 3 Kolom
+                            columns = GridCells.Fixed(3),
                             modifier = Modifier
-                                .height(160.dp) // Tinggi disesuaikan agar cukup
+                                .height(160.dp)
                                 .fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -193,14 +186,12 @@ fun ProfileScreen(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(32.dp)) // Jarak bawah
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
     }
 }
-
-// --- Helper Composable ---
 
 @Composable
 fun ProfileItem(icon: ImageVector, label: String, value: String) {

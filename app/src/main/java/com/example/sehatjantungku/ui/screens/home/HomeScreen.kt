@@ -41,7 +41,6 @@ fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel()
 ) {
-    // Collect Data
     val userName by viewModel.userName.collectAsState()
     val topArticles by viewModel.topArticles.collectAsState()
 
@@ -59,10 +58,8 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(bottom = 20.dp),
-            // [PERBAIKAN 2] Jarak diperkecil dari 20.dp menjadi 12.dp agar tidak kejauhan
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // --- 1. HEADER USER ---
             item {
                 Row(
                     modifier = Modifier
@@ -72,7 +69,6 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Profile Picture Placeholder
                         Surface(
                             modifier = Modifier
                                 .size(50.dp)
@@ -97,8 +93,6 @@ fun HomeScreen(
                             )
                         }
                     }
-
-                    // [PERBAIKAN 1] Notifikasi Icon Bersih (Tanpa Background Kotak/Segi-8)
                     IconButton(
                         onClick = { navController.navigate("notifications") }
                     ) {
@@ -111,8 +105,6 @@ fun HomeScreen(
                     }
                 }
             }
-
-            // --- 2. HERO BANNER ---
             item {
                 Box(
                     modifier = Modifier
@@ -157,12 +149,11 @@ fun HomeScreen(
                 }
             }
 
-            // --- 3. MENU FITUR ---
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 8.dp), // Sedikit padding vertical
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     FeatureItem(
@@ -183,7 +174,6 @@ fun HomeScreen(
                 }
             }
 
-            // --- 4. HEADER ARTIKEL ---
             item {
                 Row(
                     modifier = Modifier
@@ -207,7 +197,6 @@ fun HomeScreen(
                 }
             }
 
-            // --- 5. LIST ARTIKEL ---
             if (topArticles.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
@@ -216,7 +205,6 @@ fun HomeScreen(
                 }
             } else {
                 items(topArticles) { article ->
-                    // Padding horizontal saja, vertikal diatur oleh Arrangement parent
                     Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                         ArticleItem(
                             article = article,
@@ -231,7 +219,6 @@ fun HomeScreen(
     }
 }
 
-// --- KOMPONEN PENDUKUNG ---
 
 @Composable
 fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {

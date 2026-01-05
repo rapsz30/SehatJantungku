@@ -41,12 +41,10 @@ fun CVDRiskScreen(
     val state by viewModel.state.collectAsState()
     var showInfoDialog by remember { mutableStateOf(false) }
 
-    // Warna tema
     val pinkMain = Color(0xFFFF6FB1)
     val bgGray = Color(0xFFF9FAFB)
     val textDark = Color(0xFF1F2937)
 
-    // Dialog Info
     if (showInfoDialog) {
         Dialog(onDismissRequest = { showInfoDialog = false }) {
             Card(
@@ -112,7 +110,7 @@ fun CVDRiskScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // --- Section 1: Data Pribadi ---
+            // Data Pribadi
             item {
                 SectionCard(title = "Data Pribadi", icon = Icons.Default.Person, pinkMain = pinkMain) {
                     Text("Jenis Kelamin", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = textDark)
@@ -146,7 +144,7 @@ fun CVDRiskScreen(
                 }
             }
 
-            // --- Section 2: Data Fisik ---
+            // Data Fisik
             item {
                 SectionCard(title = "Data Fisik & BMI", icon = Icons.Default.MonitorWeight, pinkMain = pinkMain) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -214,7 +212,7 @@ fun CVDRiskScreen(
                 }
             }
 
-            // --- Section 3: Data Kesehatan ---
+            // Data Kesehatan
             item {
                 SectionCard(title = "Kondisi Kesehatan", icon = Icons.Default.CheckCircle, pinkMain = pinkMain) {
                     CustomInputField(
@@ -236,7 +234,7 @@ fun CVDRiskScreen(
                 }
             }
 
-            // --- Tombol Submit ---
+            // Submit
             item {
                 Button(
                     onClick = {
@@ -257,8 +255,6 @@ fun CVDRiskScreen(
         }
     }
 }
-
-// --- Helper Components untuk UI yang Rapi ---
 
 @Composable
 fun SectionCard(
@@ -366,7 +362,7 @@ fun SelectionCard(
 @Composable
 fun YesNoQuestion(
     question: String,
-    stateValue: Boolean, // True = Ya, False = Tidak (Default false)
+    stateValue: Boolean,
     activeColor: Color,
     onValueChange: (Boolean) -> Unit
 ) {

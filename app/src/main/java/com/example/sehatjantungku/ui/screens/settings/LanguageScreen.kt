@@ -51,7 +51,6 @@ fun LanguageScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
             languages.forEach { language ->
-                // Logika: Hanya Bahasa Indonesia yang tersedia
                 val isAvailable = language == "Bahasa Indonesia"
 
                 LanguageItem(
@@ -77,20 +76,18 @@ private fun LanguageItem(
     isAvailable: Boolean,
     onClick: () -> Unit
 ) {
-    // Warna background: Pink lembut jika dipilih, Abu-abu jika tidak tersedia, Putih jika normal
     val containerColor = when {
         isSelected -> Color(0xFFFFEEF7)
         !isAvailable -> Color(0xFFF5F5F5) // Abu-abu muda
         else -> Color.White
     }
 
-    // Warna border atau elevasi visual
     val contentColor = if (isAvailable) Color.Black else Color.Gray
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = isAvailable, onClick = onClick), // Disable klik jika tidak tersedia
+            .clickable(enabled = isAvailable, onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = containerColor
         ),
@@ -111,7 +108,6 @@ private fun LanguageItem(
                     color = if (isSelected) Color(0xFFFF6FB1) else contentColor
                 )
 
-                // Tambahkan teks "Akan Datang" jika bahasa belum tersedia
                 if (!isAvailable) {
                     Text(
                         text = "Akan Datang",

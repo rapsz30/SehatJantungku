@@ -16,19 +16,16 @@ fun loadDietPlanFromJson(context: Context, id: String): DietPlan? {
         if (jsonObject.has(id)) {
             val item = jsonObject.getJSONObject(id)
 
-            // PERBAIKAN: Konversi String dari JSON ke Int
-            // Menggunakan toIntOrNull() agar aman jika data kosong/error
             val idInt = item.optString("id").toIntOrNull() ?: 0
             val waktuDietInt = item.optString("waktuDiet").toIntOrNull() ?: 30
 
             return DietPlan(
-                id = idInt, // Masukkan Int
+                id = idInt,
                 dietName = item.optString("dietName"),
                 deskripsi = item.optString("deskripsi"),
                 waktuDiet = waktuDietInt, // Masukkan Int
                 aturanDiet = item.optString("aturanDiet"),
 
-                // Parsing field lainnya (tetap String)
                 sarapanA = item.optString("sarapanA"),
                 sarapanB = item.optString("sarapanB"),
                 sarapanC = item.optString("sarapanC"),

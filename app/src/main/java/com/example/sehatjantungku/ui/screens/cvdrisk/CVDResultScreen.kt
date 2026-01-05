@@ -37,13 +37,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun CVDResultScreen(
     navController: NavController,
     heartAge: Int,
-    riskScoresString: String, // String: "userRisk,optimalRisk,normalRisk"
+    riskScoresString: String,
     viewModel: CVDRiskViewModel = viewModel()
 ) {
     val saveStatus by viewModel.saveStatus.collectAsState()
     val recommendationState by viewModel.recommendationState.collectAsState() // Observe Rekomendasi AI
 
-    // --- Parsing Data ---
+    // Parsing Data
     val risks = remember(riskScoresString) {
         riskScoresString.split(",").map { it.toDoubleOrNull() ?: 0.0 }
     }
@@ -51,7 +51,7 @@ fun CVDResultScreen(
     val optimalRiskDecimal = risks.getOrElse(1) { 0.0 }
     val normalRiskDecimal = risks.getOrElse(2) { 0.0 }
 
-    // Persentase User (0-100)
+    // Persentase User
     val userRiskPercent = (userRiskDecimal * 100).toFloat()
 
     // Menentukan Kategori
@@ -61,14 +61,11 @@ fun CVDResultScreen(
         else -> Triple("Tinggi", Color(0xFFF44336), Icons.Default.Warning)
     }
 
-    // Effect untuk menangani status penyimpanan
     LaunchedEffect(saveStatus) {
         if (saveStatus is SaveStatus.Success) {
-            // Optional: Toast handled below
         }
     }
 
-    // Effect untuk memanggil Gemini saat layar dibuka
     LaunchedEffect(Unit) {
         viewModel.fetchRecommendation(heartAge, userRiskPercent)
     }
@@ -121,7 +118,7 @@ fun CVDResultScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF9FAFB)) // Light Gray Background
+                .background(Color(0xFFF9FAFB))
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -210,7 +207,7 @@ fun CVDResultScreen(
                 }
             }
 
-            // 3. Recommendation Section (AI POWERED)
+            // 3. Recommendation Section
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(16.dp),
@@ -232,7 +229,6 @@ fun CVDResultScreen(
                                 color = Color(0xFF1F2937)
                             )
                         }
-                        // Tombol refresh jika error
                         if (recommendationState is RecommendationState.Error) {
                             IconButton(onClick = { viewModel.fetchRecommendation(heartAge, userRiskPercent) }) {
                                 Icon(Icons.Default.Refresh, "Refresh", tint = Color.Gray)
@@ -241,7 +237,6 @@ fun CVDResultScreen(
                     }
                     Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF3F4F6))
 
-                    // UI berdasarkan State Rekomendasi
                     when (val state = recommendationState) {
                         is RecommendationState.Idle, is RecommendationState.Loading -> {
                             Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
@@ -323,7 +318,6 @@ fun RiskBarItem(
 ) {
     val percentage = (valueDecimal * 100).toFloat()
     val displayValue = String.format("%.1f%%", percentage)
-    // Cap visual max width at 100% even if higher, minimal visual 1%
     val visualProgress = (percentage / 100f).coerceIn(0.01f, 1f)
 
     Column {

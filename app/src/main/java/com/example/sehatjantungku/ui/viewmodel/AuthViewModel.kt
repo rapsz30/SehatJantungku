@@ -6,10 +6,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sehatjantungku.data.model.User
 import com.example.sehatjantungku.data.repository.AuthRepository
+import com.google.firebase.auth.EmailAuthProvider // Tambahan Import
+import com.google.firebase.auth.FirebaseAuth // Tambahan Import
+import com.google.firebase.firestore.FirebaseFirestore // Tambahan Import
 import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
     private val repository by lazy { AuthRepository() }
+
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 
     var isLoading by mutableStateOf(false)
         private set
@@ -26,7 +32,6 @@ class AuthViewModel : ViewModel() {
         Log.d("AuthViewModel", "ViewModel berhasil dibuat")
     }
 
-    // Login
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             isLoading = true
@@ -37,7 +42,6 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Register
     fun register(name: String, email: String, phone: String, pass: String, birthDate: String) {
         viewModelScope.launch {
             isLoading = true
@@ -48,7 +52,6 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Forgot Password
     fun forgotPassword(email: String) {
         viewModelScope.launch {
             isLoading = true
@@ -59,7 +62,6 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Fetch Profile
     fun fetchUserProfile() {
         viewModelScope.launch {
             isLoading = true
@@ -69,7 +71,6 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    //  Ganti Password
     fun changePassword(currentPass: String, newPass: String) {
         viewModelScope.launch {
             isLoading = true
@@ -81,12 +82,37 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    fun deleteAccount(password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val user = auth.currentUser
+        if (user == null) {
+            onError("User tidak ditemukan.")
+            return
+        }
+
+        val credential = EmailAuthProvider.getCredential(user.email ?: "", password)
+
+        user.reauthenticate(credential).addOnSuccessListener {
+            firestore.collection("users").document(user.uid).delete()
+                .addOnSuccessListener {
+                    user.delete().addOnSuccessListener {
+                        onSuccess()
+                    }.addOnFailureListener { e ->
+                        onError("Gagal menghapus akun: ${e.message}")
+                    }
+                }
+                .addOnFailureListener { e ->
+                    onError("Gagal menghapus data user: ${e.message}")
+                }
+        }.addOnFailureListener { e ->
+            onError("Password salah atau terjadi kesalahan: ${e.message}")
+        }
+    }
+
     fun clearStatus() {
         errorMessage = null
         isSuccess = false
     }
 
-    // menghapus data saat Logout
     fun clearUserData() {
         userData = null
         clearStatus()

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -13,23 +14,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpCenterScreen(navController: NavController) {
+    val pinkMain = Color(0xFFFF6FB1)
+    val bgGray = Color(0xFFF9FAFB)
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Pusat Bantuan") },
+            CenterAlignedTopAppBar(
+                title = { Text("Pusat Bantuan", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.White
                 )
             )
@@ -38,112 +44,112 @@ fun HelpCenterScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(bgGray)
                 .padding(paddingValues)
-                .padding(20.dp)
                 .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text(
-                text = "Pertanyaan yang Sering Diajukan",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            FAQItem(
-                question = "Bagaimana cara menggunakan fitur CVD Risk Predictor?",
-                answer = "Fitur CVD Risk Predictor dapat diakses dari menu utama. Isi formulir dengan data kesehatan Anda secara lengkap dan akurat, kemudian klik tombol 'Hitung Risiko Total' untuk melihat hasil prediksi."
+                text = "Pertanyaan Umum (FAQ)",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1F2937)
             )
 
             FAQItem(
-                question = "Apakah data saya aman?",
-                answer = "Ya, semua data Anda dienkripsi dan disimpan dengan aman. Kami mematuhi standar keamanan data kesehatan internasional."
+                question = "Bagaimana Risiko Jantung (CVD) dihitung?",
+                answer = "Kami menggunakan algoritma standar medis (seperti Framingham Risk Score) yang memperhitungkan usia, tekanan darah, kolesterol, status merokok, dan riwayat diabetes untuk mengestimasi risiko penyakit kardiovaskular dalam 10 tahun ke depan."
             )
 
             FAQItem(
-                question = "Bagaimana cara mengubah program diet?",
-                answer = "Anda dapat mengubah program diet dengan mengakses menu Personalized Diet Program, lalu isi kembali formulir preferensi diet Anda."
+                question = "Apa itu 'Umur Jantung'?",
+                answer = "Umur Jantung adalah perkiraan usia biologis sistem kardiovaskular Anda. Jika Umur Jantung > Umur Asli, artinya risiko Anda lebih tinggi dari rata-rata orang seusia Anda."
             )
 
             FAQItem(
-                question = "Apakah saya bisa berkonsultasi dengan dokter?",
-                answer = "Ya, fitur konsultasi sedang dalam pengembangan dan akan segera tersedia di update mendatang."
+                question = "Bagaimana aplikasi memilih diet untuk saya?",
+                answer = "Aplikasi menggunakan metode pembobotan cerdas (SAW) yang menggabungkan Skor Risiko Jantung, kondisi kesehatan klinis (Hipertensi/Kolesterol), dan preferensi makanan Anda untuk merekomendasikan program diet yang paling aman dan efektif."
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            FAQItem(
+                question = "Apakah saya bisa mengganti program diet?",
+                answer = "Ya. Anda dapat menghentikan program diet yang sedang berjalan di menu 'Opsi' pada halaman pelacakan diet, lalu melakukan personalisasi ulang untuk memilih program baru."
+            )
+
+            FAQItem(
+                question = "Kenapa notifikasi makan tidak muncul?",
+                answer = "Pastikan Anda telah memberikan izin notifikasi pada pengaturan HP Anda. Aplikasi kami dirancang untuk tetap mengirim pengingat jadwal makan bahkan saat layar terkunci."
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = "Hubungi Kami",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1F2937)
             )
-
-            Spacer(modifier = Modifier.height(12.dp))
 
             ContactCard(
                 icon = Icons.Default.Email,
-                title = "Email",
+                title = "Email Support",
                 subtitle = "support@sehatjantungku.com"
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            ContactCard(
-                icon = Icons.Default.Phone,
-                title = "Telepon",
-                subtitle = "+62 812-3456-7890"
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
             ContactCard(
                 icon = Icons.Default.Chat,
-                title = "WhatsApp",
+                title = "Live Chat (WhatsApp)",
                 subtitle = "+62 812-3456-7890"
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
 @Composable
-private fun FAQItem(question: String, answer: String) {
-    var expanded by remember { mutableStateOf(false) }
+fun FAQItem(question: String, answer: String) {
+    var isExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable { expanded = !expanded },
+            .clickable { isExpanded = !isExpanded },
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = question,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = Color(0xFF374151),
                     modifier = Modifier.weight(1f)
                 )
                 Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Collapse" else "Expand",
-                    tint = Color(0xFFFF6FB1)
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = Color.Gray
                 )
             }
 
-            AnimatedVisibility(visible = expanded) {
+            AnimatedVisibility(visible = isExpanded) {
                 Column {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF3F4F6))
                     Text(
                         text = answer,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
+                        fontSize = 13.sp,
+                        color = Color(0xFF6B7280), // Gray 500
+                        lineHeight = 20.sp
                     )
                 }
             }
@@ -153,14 +159,15 @@ private fun FAQItem(question: String, answer: String) {
 
 @Composable
 private fun ContactCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     subtitle: String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -168,22 +175,30 @@ private fun ContactCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = Color(0xFFFF6FB1),
-                modifier = Modifier.size(24.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color(0xFFFF6FB1).copy(alpha = 0.1f), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Color(0xFFFF6FB1),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF374151)
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 12.sp,
                     color = Color.Gray
                 )
             }

@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext // Penting: Tambahkan import ini
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,7 +26,6 @@ fun DietResultScreen(
     dietId: String,
     sharedViewModel: DietProgramViewModel
 ) {
-    // 1. Ambil Context di sini
     val context = LocalContext.current
 
     val dietData by sharedViewModel.fetchedDietPlan.collectAsState()
@@ -36,12 +35,10 @@ fun DietResultScreen(
     var isAiLoading by remember { mutableStateOf(true) }
     val pinkMain = Color(0xFFFF6FB1)
 
-    // Load Data
     LaunchedEffect(dietId) {
         sharedViewModel.fetchDietPlanFromFirebase(dietId)
     }
 
-    // Load Gemini
     LaunchedEffect(dietData) {
         dietData?.let { plan ->
             val analysis = sharedViewModel.generateGeminiAnalysis(plan.dietName)
@@ -130,11 +127,10 @@ fun DietResultScreen(
                         onClick = {
                             val dietIdStr = diet.id.toString()
 
-                            // 2. Kirim context ke ViewModel
                             sharedViewModel.startNewDiet(
                                 dietId = dietIdStr,
                                 dietName = diet.dietName,
-                                context = context, // <-- PERBAIKAN DI SINI
+                                context = context,
                                 onSuccess = {
                                     navController.navigate("diet_start/$dietIdStr") {
                                         popUpTo("diet_result") { inclusive = true }

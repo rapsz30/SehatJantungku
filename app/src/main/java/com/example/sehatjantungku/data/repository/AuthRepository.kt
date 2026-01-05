@@ -10,7 +10,7 @@ class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    // --- Register ---
+    // Register
     suspend fun registerUser(name: String, email: String, phone: String, pass: String, birthDate: String): Result<Unit> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, pass).await()
@@ -23,7 +23,7 @@ class AuthRepository {
         }
     }
 
-    // --- Login ---
+    // Login 
     suspend fun loginUser(email: String, pass: String): Result<Unit> {
         return try {
             auth.signInWithEmailAndPassword(email, pass).await()
@@ -33,7 +33,7 @@ class AuthRepository {
         }
     }
 
-    // --- Get Profile ---
+    // Get Profile
     suspend fun getUserProfile(): Result<User?> {
         return try {
             val uid = auth.currentUser?.uid ?: return Result.success(null)
@@ -45,7 +45,7 @@ class AuthRepository {
         }
     }
 
-    // --- Forgot Password ---
+    //  Forgot Password 
     suspend fun sendPasswordReset(email: String): Result<Unit> {
         return try {
             auth.sendPasswordResetEmail(email).await()
@@ -55,9 +55,7 @@ class AuthRepository {
         }
     }
 
-    // Fungsi Update Email SUDAH DIHAPUS
-
-    // --- Update Password ---
+    //  Update Password 
     suspend fun updatePassword(currentPass: String, newPass: String): Result<Unit> {
         return try {
             val user = auth.currentUser ?: throw Exception("User belum login")
