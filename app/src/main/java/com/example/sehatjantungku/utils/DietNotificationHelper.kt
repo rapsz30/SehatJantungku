@@ -47,7 +47,7 @@ class DietNotificationHelper(private val context: Context) {
 
     fun showNotification(title: String, message: String, notificationId: Int) {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher) // Pastikan icon ini ada
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH) // Untuk Android di bawah Oreo
@@ -92,19 +92,20 @@ class DietNotificationHelper(private val context: Context) {
         if (timeString.isBlank()) return
 
         try {
-            // Parsing format jam "HH:mm" (Contoh: "07:00")
-            val parts = timeString.split(":")
-            if (parts.size != 2) return
+            val regex = Regex("(\\d{1,2})[.:](\\d{2})")
+            val matchResult = regex.find(timeString)
 
-            val hour = parts[0].toInt()
-            val minute = parts[1].toInt()
+            if (matchResult == null) return
+
+            val (hourStr, minuteStr) = matchResult.destructured
+            val hour = hourStr.toInt()
+            val minute = minuteStr.toInt()
 
             val calendar = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
                 set(Calendar.SECOND, 0)
 
-                // Jika waktu sudah lewat hari ini, set untuk besok
                 if (before(Calendar.getInstance())) {
                     add(Calendar.DATE, 1)
                 }

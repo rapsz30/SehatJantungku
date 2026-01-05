@@ -13,11 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,7 +24,6 @@ import com.example.sehatjantungku.ui.theme.PinkMain
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import kotlinx.coroutines.tasks.await
 
 // --- DATA MODEL & ENUM ---
 
@@ -36,13 +32,13 @@ enum class NotificationType {
 }
 
 data class Notification(
-    val id: String, // Diubah ke String untuk menampung ID dokumen Firestore
+    val id: String, // ID dokumen Firestore
     val title: String,
     val message: String,
     val time: String,
     val isRead: Boolean,
     val type: NotificationType,
-    val timestamp: Long = 0L // Untuk sorting
+    val timestamp: Long = 0L
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,6 +90,19 @@ fun NotificationsScreen(navController: NavController) {
         } else {
             isLoading = false
         }
+    }
+
+    // Fungsi untuk menghapus notifikasi dari Firestore
+    fun deleteNotification(notificationId: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = FirebaseFirestore.getInstance()
+
+        db.collection("users").document(userId)
+            .collection("notifications").document(notificationId)
+            .delete()
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+            }
     }
 
     Scaffold(
@@ -155,8 +164,11 @@ fun NotificationsScreen(navController: NavController) {
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(notifications) { notification ->
-                        NotificationItem(notification)
+                    items(notifications, key = { it.id }) { notification ->
+                        NotificationItem(
+                            notification = notification,
+                            onDelete = { deleteNotification(notification.id) }
+                        )
                     }
                 }
             }
@@ -165,7 +177,10 @@ fun NotificationsScreen(navController: NavController) {
 }
 
 @Composable
-fun NotificationItem(notification: Notification) {
+fun NotificationItem(
+    notification: Notification,
+    onDelete: () -> Unit // Callback untuk delete
+) {
     // Tentukan Warna & Ikon berdasarkan Tipe
     val (icon, iconColor, bgColor) = when (notification.type) {
         NotificationType.REMINDER -> Triple(Icons.Default.Alarm, Color(0xFFFF9800), Color(0xFFFFF3E0)) // Oranye
@@ -185,7 +200,7 @@ fun NotificationItem(notification: Notification) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically // Ikon di tengah vertikal terhadap teks
+            verticalAlignment = Alignment.CenterVertically
         ) {
             // --- BAGIAN IKON ---
             Box(
@@ -239,6 +254,15 @@ fun NotificationItem(notification: Notification) {
                     lineHeight = 18.sp,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // --- TOMBOL DELETE ---
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Hapus Notifikasi",
+                    tint = Color.LightGray
                 )
             }
         }
